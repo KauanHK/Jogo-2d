@@ -40,7 +40,7 @@ class Robo:
     def __init__(self,x,y):
         self.x = x
         self.y = y
-        self.velocidade_y = 0.5
+        self.velocidade_y = 0.75
         self.cima = True
     
     def moverCima(self):
@@ -50,9 +50,9 @@ class Robo:
     
     def atualizar_posicao(self):
         if self.cima:
-            self.velocidade_y = - abs(self.velocidade_y) - 0.001
+            self.velocidade_y = - abs(self.velocidade_y) - 0.00075
         else: 
-            self.velocidade_y = abs(self.velocidade_y) + 0.001
+            self.velocidade_y = abs(self.velocidade_y) + 0.00075
 
         if self.x < LARGURA_TELA // 2:
             self.x += 0.2
@@ -77,7 +77,7 @@ class Parede:
         self.y = random.choice([i for i in range(ALTURA_TELA//2-100,ALTURA_TELA//2+100)])
         self.imagem = IMAGEM_PAREDE_VERTICAL
         self.imagem_rotacionada = pygame.transform.rotate(self.imagem,180)
-        self.velocidade_x = 3
+        self.velocidade_x = 3.5
         self.passou = False
     
     def atualizar_posicao(self):
