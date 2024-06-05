@@ -1,6 +1,5 @@
 import pygame
 import random
-from time import sleep
 
 # Inicialize o Pygame
 pygame.init()
@@ -42,6 +41,7 @@ class Robo:
         self.y = y
         self.velocidade_y = 0.75
         self.cima = True
+        self.parado = True
     
     def moverCima(self):
         self.cima = True
@@ -49,15 +49,13 @@ class Robo:
         self.cima = False
     
     def atualizar_posicao(self):
-        if self.cima:
-            self.velocidade_y = - abs(self.velocidade_y) - 0.00075
-        else: 
-            self.velocidade_y = abs(self.velocidade_y) + 0.00075
-
-        if self.x < LARGURA_TELA // 2:
-            self.x += 0.2
-    
-        self.y += self.velocidade_y
+        if not self.parado:
+            if self.cima:
+                self.velocidade_y = - abs(self.velocidade_y) * 1.0002
+            else: 
+                self.velocidade_y = abs(self.velocidade_y) * 1.0002
+        
+            self.y += self.velocidade_y
 
     
     def desenhar(self):
@@ -79,18 +77,20 @@ class Parede:
         self.imagem_rotacionada = pygame.transform.rotate(self.imagem,180)
         self.velocidade_x = 3.5
         self.passou = False
+        self.parado = True
     
     def atualizar_posicao(self):
-        self.x -= self.velocidade_x
-        if self.x < - LARGURA_IMAGEM_PAREDE:
-            self.passou = False
-            self.x = LARGURA_TELA
-            self.y = random.choice([i for i in range(self.y - 100,self.y + 100)])
-            if self.y < ALTURA_TELA - ALTURA_IMAGEM_PAREDE:
-                self.y = ALTURA_TELA - ALTURA_IMAGEM_PAREDE
-            elif self.y > ALTURA_IMAGEM_PAREDE:
-                self.y = ALTURA_IMAGEM_PAREDE
-        self.velocidade_x += 0.001
+        if not self.parado:
+            self.x -= self.velocidade_x
+            if self.x < - LARGURA_IMAGEM_PAREDE:
+                self.passou = False
+                self.x = LARGURA_TELA
+                self.y = random.choice([i for i in range(self.y - 100,self.y + 100)])
+                if self.y < ALTURA_TELA - ALTURA_IMAGEM_PAREDE:
+                    self.y = ALTURA_TELA - ALTURA_IMAGEM_PAREDE
+                elif self.y > ALTURA_IMAGEM_PAREDE:
+                    self.y = ALTURA_IMAGEM_PAREDE
+            self.velocidade_x *= 1.0002
                 
 
     def desenhar(self):
@@ -142,15 +142,15 @@ def verificar_colisao(robo,paredes):
 
     
 # Criando robô
-x = LARGURA_IMAGEM_PAREDE
+x = (LARGURA_TELA // 2) - (IMAGEM_ROBO.get_width() // 2)
 y = ALTURA_TELA / 2 - IMAGEM_ROBO.get_height()
 robo = Robo(x,y)
 
 # Criando as paredes
-x = LARGURA_TELA * 0.7
+x = 0.9*LARGURA_TELA
 aumento = LARGURA_TELA / 3
 paredes = []
-while x < 1.7*LARGURA_TELA:
+while x < 1.9*LARGURA_TELA:
     paredes.append(Parede(x))
     x += aumento
 
@@ -164,6 +164,7 @@ pontuacao = 0
 
 contador = 0
 fps = 60
+jogo_iniciou = False
 rodando = True
 while rodando:
     for evento in pygame.event.get():
@@ -171,6 +172,7 @@ while rodando:
             rodando = False
             quit()
     
+
     if verificar_colisao(robo,paredes):
         game_over_text = pygame.font.Font(None,70).render("Game Over", True, branco)
         x = LARGURA_TELA / 2 - (game_over_text.get_width() / 2)
@@ -186,20 +188,30 @@ while rodando:
         # Teclas pressionadas
         teclas = pygame.key.get_pressed()
 
-        # Seta para cima
-        if teclas[pygame.K_UP]:
-            robo.moverCima()
+        if any(teclas):
+            robo.parado = False
+            for parede in paredes:
+                parede.parado = False
+            jogo_iniciou = True
 
-        # Seta para baixo
-        if teclas[pygame.K_DOWN]:
-            robo.moverBaixo()
 
-        # Contador do tempo
-        timer += 1 / fps
+        if jogo_iniciou:
+            # Seta para cima
+            if teclas[pygame.K_UP]:
+                robo.moverCima()
+
+            # Seta para baixo
+            if teclas[pygame.K_DOWN]:
+                robo.moverBaixo()
+
+            # Contador do tempo
+            timer += 1 / fps
+
+
         desenhar_tela(robo,paredes,timer)
 
         for parede in paredes:
-            if  parede.pontuacao(robo):
+            if parede.pontuacao(robo):
                 pontuacao += 1
         
         pontuacao_text = pygame.font.Font(None,70).render(f"{pontuacao}", True, branco)
