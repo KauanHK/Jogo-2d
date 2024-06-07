@@ -79,12 +79,13 @@ class Parede:
         self.infinita = infinita
 
         self.y = random.choice([i for i in range(ALTURA_TELA//2-100,ALTURA_TELA//2+100)])
+        # self.y = random.choice([i for i in range(ALTURA_TELA)])
         self.imagem = IMAGEM_PAREDE_VERTICAL
         self.imagem_rotacionada = pygame.transform.rotate(self.imagem,180)
-        self.velocidade_x = 4
+        self.velocidade_x = LARGURA_TELA // 400
         self.passou = False
         self.parado = True
-        self.limite = 50
+        self.limite = 200
         self.espaco = 200
     
     def atualizar_posicao(self):
@@ -169,7 +170,7 @@ robo = Robo(x,y)
 
 # Criando as paredes
 x = 0.9*LARGURA_TELA
-aumento = LARGURA_TELA / 3
+aumento = LARGURA_TELA // 4
 paredes = []
 while x < 1.9*LARGURA_TELA:
     paredes.append(Parede(x))
