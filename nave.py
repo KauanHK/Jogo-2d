@@ -18,6 +18,8 @@ pygame.display.set_caption("Robozinho")
 # Definindo as cores
 preto = (0, 0, 0)
 branco = (255, 255, 255)
+vermelho = (255, 0, 0)
+cinza = (200, 200, 200)
 
 # Definindo as imagens
 IMAGEM_ROBO = pygame.image.load(os.path.join("imagens","nave.png"))
@@ -138,7 +140,7 @@ class Parede:
 
 
 
-def desenhar_tela(robo,paredes,timer):
+def desenhar_tela(screen,robo,paredes,timer):
     # Background preto
     screen.fill(preto)
     # screen.blit(IMAGEM_FUNDO,(0,0))
@@ -161,6 +163,91 @@ def verificar_colisao(robo,paredes):
             return True
     return False
 
+def verificar_teclas(jogo_iniciou,robo,paredes):
+
+    if jogo_iniciou:
+
+        robo.parado = False
+        for parede in paredes:
+            parede.parado = False
+
+        # Seta para cima
+        if teclas[pygame.K_UP]:
+            robo.moverCima()
+
+        # Seta para baixo
+        elif teclas[pygame.K_DOWN]:
+            robo.moverBaixo()
+
+def exibir_pontuacao(screen,pontuacao,paredes):
+    # Exibindo a pontuação na tela
+    pontuacao_text = pygame.font.Font(None,70).render(f"{pontuacao}", True, branco)
+    x = LARGURA_TELA / 2 - (pontuacao_text.get_width() / 2)
+    y = 50
+    screen.blit(pontuacao_text,(x,y))
+
+def game_over(screen,robo,paredes):
+
+    robo.parado = True
+    for parede in paredes:
+        parede.parado = True
+
+    # Definindo o quadrado do Game Over
+    largura = LARGURA_TELA // 5
+    altura = largura * 1.2
+    x = (LARGURA_TELA // 2) - (largura // 2)
+    y = (ALTURA_TELA // 2) - (altura // 2)
+
+    quadrado = pygame.Rect(x,y,largura,altura)
+
+    # Exibindo na tela o quadrado com borda
+    borda = 5
+    x = quadrado.x - borda
+    y = quadrado.y - borda
+    largura = quadrado.width + 2*borda
+    altura = quadrado.height + 2*borda
+    pygame.draw.rect(screen,branco,(x,y,largura,altura))
+    pygame.draw.rect(screen,preto,quadrado)
+
+
+    # Texto Game Over
+    font = pygame.font.SysFont('Arial',64)
+    text = font.render('Game Over',True,branco)
+    text_rect = text.get_rect(center=(LARGURA_TELA//2,ALTURA_TELA//3))
+
+    # Exibindo na tela o texto Game Over
+    screen.blit(text,text_rect)
+
+
+    # Definindo o botão
+    largura = LARGURA_TELA // 7
+    altura *= 0.2
+    x = (LARGURA_TELA // 2) - (largura // 2)
+    y = (ALTURA_TELA // 2) + altura
+
+    botao = pygame.Rect(x,y,largura,altura)
+
+    # Exibindo o botão na tela
+    pygame.draw.rect(screen,cinza,botao)
+
+    # Definindo o texto do botão
+    font = pygame.font.SysFont('Arial', 32)
+    text_surf = font.render('Restart', True, preto)
+    text_rect = text_surf.get_rect(center=botao.center)
+    screen.blit(text_surf, text_rect)
+
+
+
+    # pygame.draw.rect(quadrado,cinza,)
+    # text_surf = font.render(text, True, preto)
+    # text_rect = text_surf.get_rect(center=rect.center)
+    # screen.blit(text_surf, text_rect)
+
+    # text_rect = text.get_rect(center=(LARGURA_TELA // 2, ALTURA_TELA // 2))
+
+    # screen.blit(text,text_rect)
+
+
 
     
 # Criando robô
@@ -176,9 +263,6 @@ while x < 1.9*LARGURA_TELA:
     paredes.append(Parede(x))
     x += aumento
 
-# paredes.append(Parede(0,ALTURA_TELA - LARGURA_IMAGEM_PAREDE,True,True))
-# paredes.append(Parede(0,0,True,True))
-
 relogio = pygame.time.Clock()
 fonte = pygame.font.Font(None,36)
 timer = 0
@@ -188,70 +272,87 @@ fps = 60
 jogo_iniciou = False
 rodando = True
 contador = 0
+colidiu = False
 while rodando:
     for evento in pygame.event.get():
         if evento.type == pygame.QUIT:
             rodando = False
             quit()
-    
-
+        
     # Teclas pressionadas
     teclas = pygame.key.get_pressed()
 
-    if verificar_colisao(robo,paredes) and not teclas[pygame.K_r]:
-        game_over_text = pygame.font.Font(None,70).render("Game Over", True, branco)
-        x = LARGURA_TELA / 2 - (game_over_text.get_width() / 2)
-        y = ALTURA_TELA / 2 - (game_over_text.get_height() / 2)
-        screen.blit(game_over_text,(x,y))
-        contador += 1
-        if contador > 60 and any(teclas) and not teclas[pygame.K_r]:
-            rodando = False
-            quit()
+    # Se pressionou qualquer teclas, então o jogo inicia
+    if any(teclas):
+        jogo_iniciou = True
+    
+    # # Botão roubar (R)
+    # if teclas[pygame.K_r]:
+    #     contador = 0
+        
+    # Botão fechar jogo (ESC)
+    if teclas[pygame.K_ESCAPE]:
+        rodando = False
+        quit()
 
-    else:
+
+    # Verificar se colidiu
+    # if verificar_colisao(robo,paredes) and not teclas[pygame.K_r]:
+
+    if verificar_colisao(robo,paredes):
+        colidiu = True
     
 
-        if any(teclas):
-            robo.parado = False
-            for parede in paredes:
-                parede.parado = False
-            jogo_iniciou = True
+        
+    
+
+    # # Espera de um segundo para teclar alguma teclas e fechar o jogo, a não ser que roube
+    # if contador > 60 and any(teclas) and not teclas[pygame.K_r]:
+    #     rodando = False
+    #     quit()
 
 
+    # game_over_text = pygame.font.Font(None,70).render("Game Over", True, branco)
+    # x = LARGURA_TELA / 2 - (game_over_text.get_width() / 2)
+    # y = ALTURA_TELA / 2 - (game_over_text.get_height() / 2)
+    # screen.blit(game_over_text,(x,y))
+    # contador += 1
+
+
+    else:
+        # Verificar as teclas pressionadas
+        # Verificar se apertou para fechar o jogo a atualizar variável rodando
+        verificar_teclas(jogo_iniciou,robo,paredes)
+
+        
+
+        # Contador do tempo
         if jogo_iniciou:
-            # Seta para cima
-            if teclas[pygame.K_UP]:
-                robo.moverCima()
-
-            # Seta para baixo
-            if teclas[pygame.K_DOWN]:
-                robo.moverBaixo()
-            
-            # Botão roubar (R)
-            if teclas[pygame.K_r]:
-                contador = 0
-
-            # Contador do tempo
             timer += 1 / fps
 
 
-        desenhar_tela(robo,paredes,timer)
-
+        # Atualizar pontuação
         for parede in paredes:
             if parede.pontuacao(robo):
                 pontuacao += 1
 
+        # Ajustar velocidade de acordo com a pontuação
         if pontuacao > 50:
             robo.acelerador = 1.0003
         elif pontuacao > 80:
             robo.acelerador = 1.0002
         
-        pontuacao_text = pygame.font.Font(None,70).render(f"{pontuacao}", True, branco)
-        x = LARGURA_TELA / 2 - (pontuacao_text.get_width() / 2)
-        y = 50
-        screen.blit(pontuacao_text,(x,y))
+
     
 
+
+    # Desenhar todos os objetos e pontuação na tela
+    desenhar_tela(screen,robo,paredes,timer)
+    exibir_pontuacao(screen,pontuacao,paredes)
+    
+    # Se colidiu, então Game Over
+    if colidiu:
+        game_over(screen,robo,paredes)
 
     # Atualizar a tela
     pygame.display.flip()
