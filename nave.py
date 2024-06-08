@@ -24,6 +24,7 @@ cinza = (200, 200, 200)
 # Definindo as imagens
 IMAGEM_ROBO = pygame.image.load(os.path.join("imagens","nave.png"))
 IMAGEM_ROBO = pygame.transform.scale_by(IMAGEM_ROBO,0.035)
+LARGURA_IMAGEM_ROBO = IMAGEM_ROBO.get_width()
 
 IMAGEM_PAREDE = pygame.image.load(os.path.join("imagens","NicePng_pipes-png_388476.png"))
 IMAGEM_PAREDE = pygame.transform.scale_by(IMAGEM_PAREDE,0.35)
@@ -41,14 +42,14 @@ ALTURA_IMAGEM_PAREDE = IMAGEM_PAREDE.get_height()
 # Classe do robô
 class Robo:
 
-    img = IMAGEM_ROBO
+    IMAGEM_ROBO = IMAGEM_ROBO
+    LARGURA_IMAGEM_ROBO = LARGURA_IMAGEM_ROBO
     
     def __init__(self,x,y):
         self.x = x
         self.y = y
         self.velocidade_y = 1
         self.cima = True
-        self.parado = True
         self.acelerador = 1.00038
     
     def moverCima(self):
@@ -57,23 +58,30 @@ class Robo:
         self.cima = False
     
     def atualizar_posicao(self):
-        if not self.parado:
-            if self.cima:
-                self.velocidade_y = - abs(self.velocidade_y) * self.acelerador
-            else: 
-                self.velocidade_y = abs(self.velocidade_y) * self.acelerador
-        
-            self.y += self.velocidade_y
+        if self.cima:
+            self.velocidade_y = - abs(self.velocidade_y) * self.acelerador
+        else: 
+            self.velocidade_y = abs(self.velocidade_y) * self.acelerador
+    
+        self.y += self.velocidade_y
 
     
-    def desenhar(self):
-        screen.blit(self.img,(self.x,self.y))
+    def desenhar(self,screen):
+        screen.blit(self.IMAGEM_ROBO,(self.x,self.y))
     
     def get_mask(self):
-        return pygame.mask.from_surface(self.img)
+        return pygame.mask.from_surface(self.IMAGEM_ROBO)
     
 # Classe da parede
 class Parede:
+
+    IMAGEM_PAREDE = IMAGEM_PAREDE
+    ALTURA_TELA = ALTURA_TELA
+    LARGURA_TELA = LARGURA_TELA
+    LARGURA_IMAGEM_PAREDE = LARGURA_IMAGEM_PAREDE
+    ALTURA_IMAGEM_PAREDE = ALTURA_IMAGEM_PAREDE
+    IMAGEM_PAREDE_HORIZONTAL = IMAGEM_PAREDE_HORIZONTAL
+    IMAGEM_PAREDE_VERTICAL = IMAGEM_PAREDE_VERTICAL
 
     def __init__(self,x,horizontal=False,infinita=False):
         self.x = x
@@ -86,50 +94,53 @@ class Parede:
         self.imagem_rotacionada = pygame.transform.rotate(self.imagem,180)
         self.velocidade_x = LARGURA_TELA // 400
         self.passou = False
-        self.parado = True
         self.limite = 200
         self.espaco = 200
     
     def atualizar_posicao(self):
-        if not self.parado:
-            self.x -= self.velocidade_x
-            if self.x < - LARGURA_IMAGEM_PAREDE:
-                self.passou = False
-                self.x = LARGURA_TELA
+        self.x -= self.velocidade_x
+        if self.x < - LARGURA_IMAGEM_PAREDE:
+            self.passou = False
+            self.x = LARGURA_TELA
 
-                self.y = random.choice([i for i in range(self.y - self.limite,self.y + self.limite)])
+            self.y = random.choice([i for i in range(self.y - self.limite,self.y + self.limite)])
 
-                self.limite += 1
-                self.espaco += 1
+            self.limite += 1
+            self.espaco += 1
 
-                # Obstáculo muito baixo
-                if self.y > ALTURA_TELA - 20:
-                    self.y = ALTURA_TELA - 20
+            # Obstáculo muito baixo
+            if self.y > ALTURA_TELA - 20:
+                self.y = ALTURA_TELA - 20
+            
+            # Obstáculo muito alto (Embaixo)
+            elif self.y < ALTURA_TELA - ALTURA_IMAGEM_PAREDE:
+                self.y = ALTURA_IMAGEM_PAREDE
+
+            # # Obstáculo 
+            # elif self.y < 220 - ALTURA_IMAGEM_PAREDE:
+            #     self.y = ALTURA_IMAGEM_PAREDE
+        self.velocidade_x *= 1.0002
                 
-                # Obstáculo muito alto (Embaixo)
-                elif self.y < ALTURA_TELA - ALTURA_IMAGEM_PAREDE:
-                    self.y = ALTURA_IMAGEM_PAREDE
 
-                # # Obstáculo 
-                # elif self.y < 220 - ALTURA_IMAGEM_PAREDE:
-                #     self.y = ALTURA_IMAGEM_PAREDE
-            self.velocidade_x *= 1.0002
-                
-
-    def desenhar(self):
+    def desenhar(self,screen):
         screen.blit(self.imagem,(self.x,self.y))
         screen.blit(self.imagem_rotacionada,(self.x,self.y-ALTURA_IMAGEM_PAREDE-self.espaco))
 
-    def colidiu(self,robo_mask):
-        cano_base_mask = pygame.mask.from_surface(self.imagem)
-        cano_topo_mask = pygame.mask.from_surface(self.imagem_rotacionada)
+    def colidiu(self,robo,largura_robo):
+        min = (LARGURA_TELA // 2) - LARGURA_IMAGEM_PAREDE - (largura_robo // 2)
+        max = (LARGURA_TELA // 2) + largura_robo // 2
+        if self.x > min and self.x < max:
+            robo_mask = robo.get_mask()
 
-        distancia_base = (round(self.x - robo.x),round(self.y - robo.y))
-        distancia_topo = (round(self.x - robo.x),round(self.y-ALTURA_IMAGEM_PAREDE-self.espaco - robo.y))
+            cano_base_mask = pygame.mask.from_surface(self.imagem)
+            cano_topo_mask = pygame.mask.from_surface(self.imagem_rotacionada)
 
-        if robo_mask.overlap(cano_base_mask,distancia_base) or robo_mask.overlap(cano_topo_mask,distancia_topo):
-            return True
-        return False
+            distancia_base = (round(self.x - robo.x),round(self.y - robo.y))
+            distancia_topo = (round(self.x - robo.x),round(self.y-ALTURA_IMAGEM_PAREDE-self.espaco - robo.y))
+
+            if robo_mask.overlap(cano_base_mask,distancia_base) or robo_mask.overlap(cano_topo_mask,distancia_topo):
+                return True
+            return False
 
     def pontuacao(self,robo):
         if not self.passou and robo.x >= self.x and robo.x <= self.x + LARGURA_IMAGEM_PAREDE:
@@ -145,11 +156,11 @@ def desenhar_tela(screen,robo,paredes,timer):
     screen.fill(preto)
     # screen.blit(IMAGEM_FUNDO,(0,0))
     robo.atualizar_posicao()
-    robo.desenhar()
+    robo.desenhar(screen)
 
     for parede in paredes:
         parede.atualizar_posicao()
-        parede.desenhar()
+        parede.desenhar(screen)
 
     timer_text = fonte.render("{:.2f}".format(timer), True, branco)
     x = LARGURA_TELA / 2 - (timer_text.get_width() / 2)
@@ -157,27 +168,23 @@ def desenhar_tela(screen,robo,paredes,timer):
     screen.blit(timer_text,(x,y))
 
 def verificar_colisao(robo,paredes):
-    robo_mask = robo.get_mask()
     for parede in paredes:
-        if parede.colidiu(robo_mask):
+        if parede.colidiu(robo,LARGURA_IMAGEM_ROBO):
             return True
     return False
 
-def verificar_teclas(jogo_iniciou,robo,paredes):
+def verificar_teclas(robo):
+    teclas = pygame.key.get_pressed()
+    # Seta para cima
+    if teclas[pygame.K_UP]:
+        robo.moverCima()
 
-    if jogo_iniciou:
-
-        robo.parado = False
-        for parede in paredes:
-            parede.parado = False
-
-        # Seta para cima
-        if teclas[pygame.K_UP]:
-            robo.moverCima()
-
-        # Seta para baixo
-        elif teclas[pygame.K_DOWN]:
-            robo.moverBaixo()
+    # Seta para baixo
+    elif teclas[pygame.K_DOWN]:
+        robo.moverBaixo()
+    
+    if teclas[pygame.K_ESCAPE]:
+        pause()
 
 def exibir_pontuacao(screen,pontuacao,paredes):
     # Exibindo a pontuação na tela
@@ -247,8 +254,45 @@ def game_over(screen,robo,paredes):
 
     # screen.blit(text,text_rect)
 
+def waiting_press_key(robo,paredes):
 
+    robo.desenhar(screen)
+    for parede in paredes:
+        parede.desenhar(screen)
+    pygame.display.flip()
 
+    rodando = True
+    while rodando:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                rodando = False
+                pygame.quit()
+                quit()
+            if evento.type == pygame.KEYDOWN:
+                return True
+
+def pause():
+    soltou = False
+    rodando = True
+    while rodando:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                rodando = False
+                pygame.quit()
+                quit()
+            
+        teclas = pygame.key.get_pressed()
+        pressionou_esc = teclas[pygame.K_ESCAPE]
+
+        if soltou and pressionou_esc:
+            return True
+        
+        if not pressionou_esc:
+            soltou = True
+        
+
+    return False
+    
     
 # Criando robô
 x = (LARGURA_TELA // 2) - (IMAGEM_ROBO.get_width() // 2)
@@ -273,63 +317,29 @@ jogo_iniciou = False
 rodando = True
 contador = 0
 colidiu = False
+
+waiting_press_key(robo,paredes)
+
 while rodando:
     for evento in pygame.event.get():
         if evento.type == pygame.QUIT:
             rodando = False
             quit()
         
-    # Teclas pressionadas
-    teclas = pygame.key.get_pressed()
-
-    # Se pressionou qualquer teclas, então o jogo inicia
-    if any(teclas):
-        jogo_iniciou = True
-    
-    # # Botão roubar (R)
-    # if teclas[pygame.K_r]:
-    #     contador = 0
-        
-    # Botão fechar jogo (ESC)
-    if teclas[pygame.K_ESCAPE]:
-        rodando = False
-        quit()
-
 
     # Verificar se colidiu
     # if verificar_colisao(robo,paredes) and not teclas[pygame.K_r]:
 
-    if verificar_colisao(robo,paredes):
-        colidiu = True
-    
+    colidiu = verificar_colisao(robo,paredes)
 
-        
-    
-
-    # # Espera de um segundo para teclar alguma teclas e fechar o jogo, a não ser que roube
-    # if contador > 60 and any(teclas) and not teclas[pygame.K_r]:
-    #     rodando = False
-    #     quit()
-
-
-    # game_over_text = pygame.font.Font(None,70).render("Game Over", True, branco)
-    # x = LARGURA_TELA / 2 - (game_over_text.get_width() / 2)
-    # y = ALTURA_TELA / 2 - (game_over_text.get_height() / 2)
-    # screen.blit(game_over_text,(x,y))
-    # contador += 1
-
-
-    else:
+    if not colidiu:
         # Verificar as teclas pressionadas
         # Verificar se apertou para fechar o jogo a atualizar variável rodando
-        verificar_teclas(jogo_iniciou,robo,paredes)
-
-        
+        verificar_teclas(robo)
 
         # Contador do tempo
         if jogo_iniciou:
             timer += 1 / fps
-
 
         # Atualizar pontuação
         for parede in paredes:
@@ -341,10 +351,6 @@ while rodando:
             robo.acelerador = 1.0003
         elif pontuacao > 80:
             robo.acelerador = 1.0002
-        
-
-    
-
 
     # Desenhar todos os objetos e pontuação na tela
     desenhar_tela(screen,robo,paredes,timer)
@@ -353,12 +359,12 @@ while rodando:
     # Se colidiu, então Game Over
     if colidiu:
         game_over(screen,robo,paredes)
+    
 
     # Atualizar a tela
     pygame.display.flip()
 
-    # 60 FPS
+    # Definindo o FPS
     relogio.tick(fps)
-
 
 pygame.quit()
