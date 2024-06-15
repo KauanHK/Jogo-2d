@@ -49,7 +49,7 @@ def carregar_imagem(file_name,size: tuple | None=None):
 
             # Razão entre a largura e altura originais
             relacao = largura_original / altura_original
-            altura = largura * relacao
+            altura = largura / relacao
 
             # Carregando a imagem de acordo com as dimensões calculadas
             imagem = pygame.transform.scale(imagem,(largura,altura))
@@ -60,10 +60,16 @@ def carregar_imagem(file_name,size: tuple | None=None):
         
     return imagem
 
-IMAGEM_ROBO = carregar_imagem('nave.png',(0.05*LARGURA_TELA,'auto'))
 IMAGEM_PAREDE = carregar_imagem('obstaculo.jpg',('auto',0.4*ALTURA_TELA))
 IMAGEM_PAREDE_ROTACIONADA = pygame.transform.rotate(IMAGEM_PAREDE,180)
 FUNDO = carregar_imagem('fund.jpg',(LARGURA_TELA,ALTURA_TELA))
+
+
+IMAGEM_NAVE1 = carregar_imagem('nave1.png',(0.05*LARGURA_TELA,'auto'))
+IMAGEM_NAVE2 = carregar_imagem('nave2.png',(0.05*LARGURA_TELA,'auto'))
+FOGO_NAVE1 = carregar_imagem('fogo1.png',(0.05*LARGURA_TELA,'auto'))
+FOGO_NAVE2 = carregar_imagem('fogo2.png',(0.05*LARGURA_TELA,'auto'))
+
 
 # Título da janela
 pygame.display.set_caption("Robozinho")
@@ -75,7 +81,7 @@ vermelho = (255, 0, 0)
 cinza = (200, 200, 200)
 
 # Classe do robô
-class Robo:
+class Nave:
 
     def __init__(self,x,y):
         self.x = x
@@ -83,12 +89,17 @@ class Robo:
         self.velocidade_y = 1
         self.cima = True
         self.acelerador = 1.00038
-        self.imagem = IMAGEM_ROBO
+        self.imagem = IMAGEM_NAVE2
+        self.fogo = FOGO_NAVE2
+        self.espaco_pressionado = False
     
-    def moverCima(self):
-        self.cima = True
-    def moverBaixo(self):
-        self.cima = False
+    def mover(self,direction):
+        if direction == 1:
+            self.cima = False
+        elif direction == 2:
+            self.cima = False if self.cima else True
+        else:
+            self.cima = True
     
     def atualizar_posicao(self):
         if self.cima:
@@ -101,6 +112,8 @@ class Robo:
     
     def desenhar(self,screen):
         screen.blit(self.imagem,(self.x,self.y))
+        if self.cima:
+            screen.blit(self.fogo,(self.x,self.y+self.imagem.get_height()))
     
     def get_mask(self):
         return pygame.mask.from_surface(self.imagem)
@@ -182,47 +195,47 @@ class Parede:
 
 
 
-    def colidiu(self,robo):
+    def colidiu(self,nave):
         min = (LARGURA_TELA // 2) - self.largura_imagem - (self.largura_imagem // 2)
         max = (LARGURA_TELA // 2) + self.largura_imagem // 2
         if self.x > min and self.x < max:
-            robo_mask = robo.get_mask()
+            robo_mask = nave.get_mask()
 
             cano_base_mask = pygame.mask.from_surface(self.parede)
             cano_topo_mask = pygame.mask.from_surface(self.parede_rotacionada)
 
-            distancia_base = (round(self.x - robo.x),round(self.y - robo.y))
-            distancia_topo = (round(self.x - robo.x),round(self.y-(2*self.altura_imagem)-self.espaco - robo.y))
+            distancia_base = (round(self.x - nave.x),round(self.y - nave.y))
+            distancia_topo = (round(self.x - nave.x),round(self.y-(2*self.altura_imagem)-self.espaco - nave.y))
 
             if robo_mask.overlap(cano_base_mask,distancia_base) or robo_mask.overlap(cano_topo_mask,distancia_topo):
                 return True
             return False
 
-    def pontuacao(self,robo):
-        if not self.passou and robo.x >= self.x and robo.x <= self.x + self.largura_imagem:
+    def pontuacao(self,nave):
+        if not self.passou and nave.x >= self.x and nave.x <= self.x + self.largura_imagem:
             self.passou = True
             return True
         return False
         
 
-def atualizar_posicao(robo,paredes):
-    robo.atualizar_posicao()
+def atualizar_posicao(nave,paredes):
+    nave.atualizar_posicao()
     for parede in paredes:
         parede.atualizar_posicao(paredes)
 
-def desenhar_tela(screen,fundo,robo,paredes):
+def desenhar_tela(screen,fundo,nave,paredes):
     # Background preto
     screen.fill(preto)
 
     screen.blit(fundo,(0,0))
     
-    robo.desenhar(screen)
+    nave.desenhar(screen)
     for parede in paredes:
         parede.desenhar(screen)
     
-def verificar_colisao(robo,paredes):
+def verificar_colisao(nave,paredes):
     for parede in paredes:
-        if parede.colidiu(robo):
+        if parede.colidiu(nave):
             return True
     return False
 
@@ -244,7 +257,7 @@ def exibir_pontuacao(screen,pontuacao,timer):
     screen.blit(timer_text,(x,y))
 
 
-def waiting_press_key(screen,robo,paredes):
+def waiting_press_key(screen,nave,paredes):
 
     rodando = True
     while rodando:
@@ -256,7 +269,7 @@ def waiting_press_key(screen,robo,paredes):
             if evento.type == pygame.KEYDOWN:
                 return True
 
-def pause(screen,fundo,robo,paredes,pontuacao,timer):
+def pause(screen,fundo,nave,paredes,pontuacao,timer):
     clock = pygame.time.Clock()
     pausado = True
     while pausado:
@@ -269,7 +282,7 @@ def pause(screen,fundo,robo,paredes,pontuacao,timer):
                 if evento.key == pygame.K_ESCAPE:
                     pausado = False
 
-        desenhar_tela(screen,fundo,robo,paredes)
+        desenhar_tela(screen,fundo,nave,paredes)
         exibir_pontuacao(screen,pontuacao,timer)
 
         font = pygame.font.SysFont('Arial',64)
@@ -283,11 +296,12 @@ def pause(screen,fundo,robo,paredes,pontuacao,timer):
     return False
     
 
-def criar_objetos():
-    # Criando robô
-    x = (LARGURA_TELA // 2) - (IMAGEM_ROBO.get_width() // 2)
-    y = ALTURA_TELA / 2 - IMAGEM_ROBO.get_height()
-    robo = Robo(x,y)
+def criar_objetos(screen):
+    # Criando a nave
+    screen_rect = screen.get_rect()
+    x = screen_rect.centerx
+    y = screen_rect.centery
+    nave = Nave(x,y)
 
     # Criando as paredes
     x = 0.9*LARGURA_TELA
@@ -299,62 +313,67 @@ def criar_objetos():
         x += aumento
         id += 1
     
-    return robo,paredes
+    return nave,paredes
 
-def exibir_interface_inicial(screen,fundo,cor_txt):
+def criar_botao(txt: str,dest: tuple,font_size,txt_color):
 
-    # Definindo o fundo
-    screen.blit(fundo,(0,0))
+    # Definindo o texto do botão
+    font = pygame.font.Font(None,font_size)
+    txt = font.render(txt,False,txt_color)
 
-    font = pygame.font.Font(None,80)
-    txt = font.render('Jogo 2D da Nave',False,cor_txt)
-    x = (screen.get_width() - txt.get_width()) // 2
-    y = (screen.get_height() - txt.get_height()) // 5
-    screen.blit(txt,(x,y))
+    # Criando o rect do botão
+    botao = pygame.Surface(dest)
+    botao_rect = botao.get_rect()
+    botao.blit(txt,botao_rect.center)
 
 
-def criar_botoes_inicio(screen,cor):
+    return botao_rect
 
-    preto = (0,0,0)
 
-    # Criando o botão Iniciar
-    largura = LARGURA_TELA // 6
-    altura = ALTURA_TELA // 10
-    x_botao_iniciar = (screen.get_width() - largura) // 2
-    y_botao_iniciar = ALTURA_TELA // 2
-    botao_iniciar = pygame.Rect(x_botao_iniciar,y_botao_iniciar,largura,altura)
-    pygame.draw.rect(screen,cor,botao_iniciar)
+def criar_titulo(txt: str, dest: tuple, txt_size: int, color: tuple):
 
-    # Texto do botão Iniciar
-    font = pygame.font.Font(None,48)
-    txt_start = font.render('Start',False,preto)
+    font = pygame.font.Font(None,txt_size)
+    txt = font.render(txt,False,color)
+    return txt
 
-    # Coordenadas do texto no botão Iniciar
-    x_txt = x_botao_iniciar + (largura - txt_start.get_width()) // 2
-    y_txt = y_botao_iniciar + (altura - txt_start.get_height()) // 2
+def funcao():
+    pass
+    # # Criando o botão Iniciar
+    # largura = LARGURA_TELA // 6
+    # altura = ALTURA_TELA // 10
+    # x_botao_iniciar = (screen.get_width() - largura) // 2
+    # y_botao_iniciar = ALTURA_TELA // 2
+    # botao_iniciar = pygame.Rect(x_botao_iniciar,y_botao_iniciar,largura,altura)
+    # pygame.draw.rect(screen,cor,botao_iniciar)
 
-    # Inserindo o texto no botão
-    screen.blit(txt_start,(x_txt,y_txt))
+    # # Texto do botão Iniciar
+    # font = pygame.font.Font(None,48)
+    # txt_start = font.render('Start',False,preto)
 
-    # pygame.draw.rect(surf_buttons,(255,255,255),botao_iniciar)
-    # surf_buttons.blit(botao_iniciar,(0,0))
-    # screen.blit(surf_buttons,(x_surf_buttons,y_surf_buttons))
+    # # Coordenadas do texto no botão Iniciar
+    # x_txt = x_botao_iniciar + (largura - txt_start.get_width()) // 2
+    # y_txt = y_botao_iniciar + (altura - txt_start.get_height()) // 2
 
-    return botao_iniciar
+    # # Inserindo o texto no botão
+    # screen.blit(txt_start,(x_txt,y_txt))
+
+    # # pygame.draw.rect(surf_buttons,(255,255,255),botao_iniciar)
+    # # surf_buttons.blit(botao_iniciar,(0,0))
+    # # screen.blit(surf_buttons,(x_surf_buttons,y_surf_buttons))
 
 def main(screen,fundo):
-    # Criar robo e obstáculos
-    robo,paredes = criar_objetos()
+    # Criar nave e obstáculos
+    nave,paredes = criar_objetos(screen)
 
     # Clock para definir fps
     clock = pygame.time.Clock()
     fps = 60
 
-    # Timer e pontuação
     timer = 0
     pontuacao = 0
 
     colidiu = False
+    espaco_pressionado = False
 
     inicio_jogo(screen,fundo)
     # Loop principal
@@ -365,20 +384,32 @@ def main(screen,fundo):
                 rodando = False
                 pygame.quit()
                 quit()
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_SPACE and not espaco_pressionado:
+                    nave.mover(2)
+                    espaco_pressionado = True
+            elif evento.type == pygame.KEYUP:
+                if evento.key == pygame.K_SPACE:
+                    espaco_pressionado = False
+                
+
+
             
         # Verificar teclas
         teclas = pygame.key.get_pressed()
         
     
         if teclas[pygame.K_UP]:
-            robo.moverCima()
+            nave.mover(0)
         elif teclas[pygame.K_DOWN]:
-            robo.moverBaixo()
+            nave.mover(1)
+        # if teclas[pygame.K_SPACE]:
+        #     nave.mover(2)
         if teclas[pygame.K_ESCAPE]:
-            pause(screen,fundo,robo,paredes,pontuacao,timer)
+            pause(screen,fundo,nave,paredes,pontuacao,timer)
 
         # Verificar colisões
-        colidiu = verificar_colisao(robo,paredes)
+        colidiu = verificar_colisao(nave,paredes)
         if colidiu and not teclas[pygame.K_r]:
             game_over(screen,fundo)
         
@@ -387,18 +418,12 @@ def main(screen,fundo):
 
         # Atualizar pontuação
         for parede in paredes:
-            if parede.pontuacao(robo):
+            if parede.pontuacao(nave):
                 pontuacao += 1
 
-        # # Ajustar velocidade de acordo com a pontuação
-        # if pontuacao > 50:
-        #     robo.acelerador = 1.0003
-        # elif pontuacao > 80:
-        #         robo.acelerador = 1.0002
-
         # Desenhar todos os objetos e pontuação na tela
-        atualizar_posicao(robo,paredes)
-        desenhar_tela(screen,fundo,robo,paredes)
+        atualizar_posicao(nave,paredes)
+        desenhar_tela(screen,fundo,nave,paredes)
         exibir_pontuacao(screen,pontuacao,timer)
         
         # Atualizar a tela
@@ -414,8 +439,10 @@ def inicio_jogo(screen,fundo):
 
     cores = [255,255,255]
 
-    exibir_interface_inicial(screen,fundo,(255,255,255))
-    botao_iniciar = criar_botoes_inicio(screen,branco)
+    x_titulo = (screen.get_width() - txt.get_width()) // 2
+    y_titulo = (screen.get_height() - txt.get_height()) // 5
+
+    botao_iniciar = criar_botao('Start',screen.get_rect().center,80,branco)
 
     clock = pygame.time.Clock()
     fps = 60
@@ -440,11 +467,15 @@ def inicio_jogo(screen,fundo):
         else:
             cor_botao_iniciar = branco
                     
-        exibir_interface_inicial(screen,fundo,(cores[0],cores[1],cores[2]))
-        botao_iniciar = criar_botoes_inicio(screen,cor_botao_iniciar)
+        titulo = criar_titulo((cores[0],cores[1],cores[2]))
+        botao_iniciar = criar_botao('Start',screen.get_rect().center,80,branco)
 
         escala_aleatoria = random.choice([0,1,2])
         diminuicao = random.choice([i for i in range(5)])
+
+        screen.fill(fundo)
+        screen.blit(titulo,(x_titulo,y_titulo))
+        screen.blit(botao_iniciar,)
 
         cores[escala_aleatoria] -= diminuicao
         if cores[escala_aleatoria] < 0:
@@ -460,49 +491,43 @@ def game_over(screen,fundo):
 
     branco = (255,255,255)
     preto = (0,0,0)
-    cinza_transparente = (200,200,200,128)
+    cinza = (200,200,200)
 
-    # Definindo o quadrado do Game Over
-    largura_quad_go = LARGURA_TELA // 5
-    altura_quad_go = largura_quad_go * 1.2
-    x = (LARGURA_TELA // 2) - (largura_quad_go // 2)
-    y = (ALTURA_TELA // 2) - (altura_quad_go // 2)
-
-    quadrado = pygame.Rect(x,y,largura_quad_go,altura_quad_go)
-
-    # Exibindo na tela o quadrado com borda
-    borda = 5
-    x = quadrado.x - borda
-    y = quadrado.y - borda
-    largura_borda = quadrado.width + 2*borda
-    altura_borda = quadrado.height + 2*borda
-
-    quadrado_borda = pygame.Rect(x,y,largura_borda,altura_borda)
-
-    # Definindo o texto 'Game Over'
+    # Definindo o texto Game Over
     font = pygame.font.SysFont('Arial',80)
-    game_over_text_surf = font.render('Game Over',True,vermelho)
-    game_over_text_surf.convert_alpha()
-    game_over_rect = game_over_text_surf.get_rect(center=(quadrado.centerx,(quadrado.centery)-(quadrado.height//3)))
+    txt_game_over = font.render('Game Over',True,vermelho)
 
-    # Definindo o fundo do txt Game Over
-    surf_game_over = pygame.Surface(game_over_text_surf.get_size(),pygame.SRCALPHA)
-    
+    # Definindo as coordenadas do texto Game Over
+    x_go = (screen.get_width() - txt_game_over.get_width()) // 2
+    y_go = (screen.get_height() - txt_game_over.get_height()) // 3
 
-    # Definindo o botão
-    largura = LARGURA_TELA // 7
-    altura = altura_borda * 0.2
-    x = (LARGURA_TELA // 2) - (largura // 2)
-    y = (ALTURA_TELA // 2) + altura
+    # Definindo o texto do botão Restart
+    font = pygame.font.Font(None,48)
+    txt_restart = font.render('Restart',False,preto)
 
-    botao = pygame.Rect(x,y,largura,altura)
+    # Definindo as dimensões do botão
+    largura_botao = LARGURA_TELA // 6
+    altura_botao = ALTURA_TELA // 10
+    x_botao = (LARGURA_TELA - largura_botao) // 2
+    y_botao = (ALTURA_TELA - altura_botao) // 2
 
-    # Definindo o texto do botão
-    font = pygame.font.SysFont('Arial', 32)
-    restart_text_surf = font.render('Restart', True, preto)
-    restart_rect = restart_text_surf.get_rect(center=botao.center)
+    # Criando o botão
+    botao = pygame.Surface((largura_botao,altura_botao))
 
-    cor_botao = cinza
+    # Definindo o rect do botão
+    botao_rect = botao.get_rect()
+    botao_rect.topleft = (x_botao,y_botao)
+
+    # Definindo as coordenadas do texto Restart
+    x_restart = (botao.get_width() - txt_restart.get_width()) // 2
+    y_restart = (botao.get_height() - txt_restart.get_height()) // 2
+
+    # Definindo o fundo do botão como cinza
+    botao.fill(branco)
+
+    # Inserindo o texto Restart no botão
+    botao.blit(txt_restart,(x_restart,y_restart))
+
     go = True
     clock = pygame.time.Clock()
     while go:
@@ -519,20 +544,23 @@ def game_over(screen,fundo):
 
             elif evento.type == pygame.MOUSEBUTTONDOWN:
                 if evento.button == 1:
-                    if botao.collidepoint(evento.pos):
+                    if botao_rect.collidepoint(evento.pos):
                         main(screen,fundo)
+        
+
+        mouse = pygame.mouse.get_pos()
+        if botao_rect.collidepoint(mouse):
+            botao.fill(cinza)
+        else:
+            botao.fill(branco)
 
         teclas = pygame.key.get_pressed()
         if teclas[pygame.K_r]:
             go = False
 
-        # pygame.draw.rect(screen,branco,quadrado_borda)
-        # pygame.draw.rect(screen,preto,quadrado)
-        surf_game_over.fill(cinza_transparente)
-        surf_game_over.blit(game_over_text_surf,(0,0))
-        pygame.draw.rect(screen,cor_botao,botao)
-        screen.blit(restart_text_surf, restart_rect)
-        screen.blit(game_over_text_surf,game_over_rect)
+        screen.blit(txt_game_over,(x_go,y_go))
+        botao.blit(txt_restart,(x_restart,y_restart))
+        screen.blit(botao,(x_botao,y_botao))
 
         # 60 FPS
         clock.tick(60)
