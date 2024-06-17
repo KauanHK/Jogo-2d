@@ -4,10 +4,10 @@ import os
 
 import pygame.draw_py
 
-# Inicialize o Pygame
+# Inicializar o Pygame
 pygame.init()
 
-# Crie uma janela de exibição como fullscreen
+# Criar uma janela de exibição como fullscreen
 screen = pygame.display.set_mode((0,0),pygame.FULLSCREEN)
 
 # Pegando as dimensões da tela
@@ -67,13 +67,7 @@ IMAGEM_PAREDE_ROTACIONADA = pygame.transform.rotate(IMAGEM_PAREDE,180)
 FUNDO = carregar_imagem('fund.jpg',(LARGURA_TELA,ALTURA_TELA))
 
 # Título da janela
-pygame.display.set_caption("Robozinho")
-
-# Definindo as cores
-preto = (0, 0, 0)
-branco = (255, 255, 255)
-vermelho = (255, 0, 0)
-cinza = (200, 200, 200)
+pygame.display.set_caption("Jogo da Nave 2D")
 
 # Classe da nave
 class Nave:
@@ -136,6 +130,8 @@ class Nave:
 
     
     def desenhar(self, screen, menu):
+
+        branco = (255,255,255)
         
         if self.selecionado and menu:
             self.largura = self.max_width
@@ -170,37 +166,6 @@ class Nave:
             return True
         return False
     
-    # def hover_size(self,increase):
-    #     # Se o tamanho da imagem for menor do que o máximo
-    #     if self.largura < self.max_width:
-    #         # Aumentar se for para aumentar
-    #         if increase:
-    #             self.largura *= 1.05
-    #             self.altura *= 1.05
-
-    #         # Se não for para aumentar, e não estiver selecionado, redefinir as dimensões
-    #         elif not self.selecionado:
-    #             self.largura = self.min_width
-    #             self.altura = self.min_height
-            
-    #         self.imagem = carregar_imagem(f'nave{self.nave}.png',(self.largura,self.altura))
-        
-
-    #     # Se as dimensões forem maiores do que as máximas, limitar para o tamanho máximo
-    #     else:
-    #         self.largura = self.max_height
-    #         self.altura = self.max_height
-    #         self.imagem = carregar_imagem(f'nave{self.nave}.png',(self.largura,self.altura))
-
-
-    # def hover(self,mouse_pos):
-    #     rect = self.imagem.get_rect()
-    #     rect.topleft = (self.x,self.y)
-    #     if rect.collidepoint(mouse_pos):
-    #         self.hover_size(True)
-    #     else:
-    #         self.hover_size(False)
-
 # Classe da parede
 class Parede:
 
@@ -357,6 +322,9 @@ def atualizar_posicao(nave,paredes):
         parede.atualizar_posicao(paredes)
 
 def desenhar_tela(screen,fundo,nave,paredes):
+    
+    preto = (0,0,0)
+
     # Background preto
     screen.fill(preto)
 
@@ -388,7 +356,6 @@ def exibir_pontuacao(screen,pontuacao,timer):
     x = LARGURA_TELA / 2 - (timer_text.get_width() / 2)
     y = 100
     screen.blit(timer_text,(x,y))
-
 
 def waiting_press_key(screen,nave,paredes):
 
@@ -426,8 +393,7 @@ def pause(screen,fundo,nave,paredes,pontuacao,timer):
         pygame.display.flip()
         clock.tick(10)
             
-    return False
-    
+    return False    
 
 def criar_objetos(screen,nave_selecionada):
     # Criando a nave
@@ -469,6 +435,8 @@ def criar_botao(txt: str, font_size: int, size: tuple, color_button: tuple, colo
     return botao_surf
 
 def criar_botoes_inicio(screen,colors: list[tuple]):
+
+    preto = (0,0,0)
     
     largura_tela = screen.get_width()
     altura_tela = screen.get_height()
@@ -503,45 +471,6 @@ def criar_titulo(txt: str, txt_size: int, color: tuple):
     txt = font.render(txt,False,color)
     return txt
 
-def funcao():
-    pass
-    # # Criando o botão Iniciar
-    # largura = LARGURA_TELA // 6
-    # altura = ALTURA_TELA // 10
-    # x_botao_iniciar = (screen.get_width() - largura) // 2
-    # y_botao_iniciar = ALTURA_TELA // 2
-    # botao_iniciar = pygame.Rect(x_botao_iniciar,y_botao_iniciar,largura,altura)
-    # pygame.draw.rect(screen,cor,botao_iniciar)
-
-    # # Texto do botão Iniciar
-    # font = pygame.font.Font(None,48)
-    # txt_start = font.render('Start',False,preto)
-
-    # # Coordenadas do texto no botão Iniciar
-    # x_txt = x_botao_iniciar + (largura - txt_start.get_width()) // 2
-    # y_txt = y_botao_iniciar + (altura - txt_start.get_height()) // 2
-
-    # # Inserindo o texto no botão
-    # screen.blit(txt_start,(x_txt,y_txt))
-
-    # # pygame.draw.rect(surf_buttons,(255,255,255),botao_iniciar)
-    # # surf_buttons.blit(botao_iniciar,(0,0))
-    # # screen.blit(surf_buttons,(x_surf_buttons,y_surf_buttons))
-
-def main(screen,fundo):
-    
-    nave_selecionada = 1
-    while True:
-        event = interface_inicial(screen,fundo)
-        if event == 'Sair':
-            pygame.quit()
-            quit()
-        elif event == 'Naves':
-            nave_selecionada = interface_naves(screen,fundo,nave_selecionada)
-        else:
-            main_loop(screen,fundo,nave_selecionada)
-
-    
 def main_loop(screen,fundo,nave_selecionada):
     # Criar nave e obstáculos
     nave,paredes = criar_objetos(screen,nave_selecionada)
@@ -611,7 +540,6 @@ def main_loop(screen,fundo,nave_selecionada):
 
         # Definindo o FPS
         clock.tick(fps)
-
 
 def interface_inicial(screen,fundo):
 
@@ -862,7 +790,22 @@ def game_over(screen,fundo,nave_selecionada):
         # Atualizando a tela
         pygame.display.flip()
 
-        
+def main(screen,fundo):
+     # Definir a primeira nave como a nave selecionada
+    nave_selecionada = 1
+
+    # Loop que alterna entre cada interface (menu inicial, seleção de naves e o jogo)
+    while True:
+        # 
+        event = interface_inicial(screen,fundo)
+        if event == 'Sair':
+            pygame.quit()
+            quit()
+        elif event == 'Naves':
+            nave_selecionada = interface_naves(screen,fundo,nave_selecionada)
+        else:
+            main_loop(screen,fundo,nave_selecionada)        
+
 main(screen,FUNDO)
 
 pygame.quit()
