@@ -94,7 +94,12 @@ class Nave:
         self.max_width = self.largura * 1.1
         self.min_width = self.largura
         
+        original_nave = carregar_imagem(f'nave{nave}.png').get_width()
         self.imagem = carregar_imagem(f'nave{nave}.png',(self.largura,'auto'))
+
+        original_width = carregar_imagem(f'fogo{nave}.png').get_width()
+        largura_fogo = original_width * self.largura // original_nave
+        self.fogo = carregar_imagem(f'fogo{nave}.png',(largura_fogo,'auto'))
         
         if isinstance(altura,int):
             self.altura = altura
@@ -104,7 +109,6 @@ class Nave:
         self.max_height = self.altura * 1.1
         self.min_height = self.altura
 
-        self.fogo = carregar_imagem(f'fogo{nave}.png',(LARGURA_TELA*0.05,'auto'))
 
         self.espaco_pressionado = False
 
@@ -131,9 +135,9 @@ class Nave:
         self.y += self.velocidade_y
 
     
-    def desenhar(self,screen):
+    def desenhar(self, screen, menu):
         
-        if self.selecionado:
+        if self.selecionado and menu:
             self.largura = self.max_width
             self.altura = self.max_height
             img_rect = self.imagem.get_rect()
@@ -154,7 +158,9 @@ class Nave:
         return pygame.mask.from_surface(self.imagem)
     
     def soltar_fogo(self,screen):
-        screen.blit(self.fogo,(self.x,self.y+self.imagem.get_height()))
+        x = self.imagem.get_rect(topleft=(self.x,self.y)).centerx - (self.fogo.get_width() // 2)
+        y = self.y + self.altura
+        screen.blit(self.fogo,(x,y))
     
     def clicked(self,mouse_pos):
         rect = self.imagem.get_rect()
@@ -195,7 +201,6 @@ class Nave:
     #     else:
     #         self.hover_size(False)
 
-    
 # Classe da parede
 class Parede:
 
@@ -274,9 +279,10 @@ class Parede:
 
 
     def colidiu(self,nave):
-        min = (LARGURA_TELA // 2) - self.largura_imagem - (self.largura_imagem // 2)
-        max = (LARGURA_TELA // 2) + self.largura_imagem // 2
-        if self.x > min and self.x < max:
+        # min = (LARGURA_TELA // 2) - self.largura_imagem - (self.largura_imagem // 2)
+        # max = (LARGURA_TELA // 2) + self.largura_imagem // 2
+        # if self.x > min and self.x < max:
+        if self.x <= nave.x + nave.largura and self.x + self.largura_imagem >= nave.x:
             robo_mask = nave.get_mask()
 
             cano_base_mask = pygame.mask.from_surface(self.parede)
@@ -356,7 +362,7 @@ def desenhar_tela(screen,fundo,nave,paredes):
 
     screen.blit(fundo,(0,0))
     
-    nave.desenhar(screen)
+    nave.desenhar(screen,False)
     for parede in paredes:
         parede.desenhar(screen)
     
@@ -581,10 +587,6 @@ def main_loop(screen,fundo,nave_selecionada):
         if teclas[pygame.K_ESCAPE]:
             pause(screen,fundo,nave,paredes,pontuacao,timer)
 
-        # Verificar colisões
-        colidiu = verificar_colisao(nave,paredes)
-        if colidiu and not teclas[pygame.K_r]:
-            game_over(screen,fundo,nave_selecionada)
         
         # Contador do tempo
         timer += 1 / fps
@@ -598,6 +600,11 @@ def main_loop(screen,fundo,nave_selecionada):
         atualizar_posicao(nave,paredes)
         desenhar_tela(screen,fundo,nave,paredes)
         exibir_pontuacao(screen,pontuacao,timer)
+        
+        # Verificar colisões
+        colidiu = verificar_colisao(nave,paredes)
+        if colidiu and not teclas[pygame.K_r]:
+            game_over(screen,fundo,nave_selecionada)
         
         # Atualizar a tela
         pygame.display.flip()
@@ -764,7 +771,7 @@ def interface_naves(screen,fundo,nave_selecionada: int):
         screen.blit(titulo,(x_titulo,y_titulo))
 
         for nave in naves:
-            nave.desenhar(screen)
+            nave.desenhar(screen, True)
         botao_voltar.desenhar(screen)
 
         clock.tick(60)
@@ -775,18 +782,20 @@ def game_over(screen,fundo,nave_selecionada):
     branco = (255,255,255)
     preto = (0,0,0)
     cinza = (200,200,200)
+    vermelho = (255,0,0)
 
-    # Definindo o texto Game Over
-    font = pygame.font.SysFont('Arial',80)
-    txt_game_over = font.render('Game Over',True,vermelho)
+    # # Definindo o texto Game Over
+    # font = pygame.font.SysFont('Arial',80)
+    # txt_game_over = font.render('Game Over',True,vermelho)
+    txt_game_over = criar_titulo('Game Over',80,vermelho)
 
     # Definindo as coordenadas do texto Game Over
     x_go = (screen.get_width() - txt_game_over.get_width()) // 2
     y_go = (screen.get_height() - txt_game_over.get_height()) // 3
 
-    # Definindo o texto do botão Restart
-    font = pygame.font.Font(None,48)
-    txt_restart = font.render('Restart',False,preto)
+    # # Definindo o texto do botão Restart
+    # font = pygame.font.Font(None,48)
+    # txt_restart = font.render('Restart',False,preto)
 
     # Definindo as dimensões do botão
     largura_botao = LARGURA_TELA // 6
@@ -794,22 +803,25 @@ def game_over(screen,fundo,nave_selecionada):
     x_botao = (LARGURA_TELA - largura_botao) // 2
     y_botao = (ALTURA_TELA - altura_botao) // 2
 
-    # Criando o botão
-    botao = pygame.Surface((largura_botao,altura_botao))
+    # # Criando o botão
+    # botao = pygame.Surface((largura_botao,altura_botao))
 
-    # Definindo o rect do botão
-    botao_rect = botao.get_rect()
-    botao_rect.topleft = (x_botao,y_botao)
+    # # Definindo o rect do botão
+    # botao_rect = botao.get_rect()
+    # botao_rect.topleft = (x_botao,y_botao)
 
-    # Definindo as coordenadas do texto Restart
-    x_restart = (botao.get_width() - txt_restart.get_width()) // 2
-    y_restart = (botao.get_height() - txt_restart.get_height()) // 2
+    botao = criar_botao('Restart',48,(largura_botao,altura_botao),branco,preto)
+    botao_rect = botao.get_rect(topleft=(x_botao,y_botao))
 
-    # Definindo o fundo do botão como cinza
-    botao.fill(branco)
+    # # Definindo as coordenadas do texto Restart
+    # x_restart = (botao.get_width() - txt_restart.get_width()) // 2
+    # y_restart = (botao.get_height() - txt_restart.get_height()) // 2
 
-    # Inserindo o texto Restart no botão
-    botao.blit(txt_restart,(x_restart,y_restart))
+    # # Definindo o fundo do botão como cinza
+    # botao.fill(branco)
+
+    # # Inserindo o texto Restart no botão
+    # botao.blit(txt_restart,(x_restart,y_restart))
 
     go = True
     clock = pygame.time.Clock()
@@ -831,18 +843,17 @@ def game_over(screen,fundo,nave_selecionada):
                         main_loop(screen,fundo,nave_selecionada)
         
 
-        mouse = pygame.mouse.get_pos()
-        if botao_rect.collidepoint(mouse):
-            botao.fill(cinza)
-        else:
-            botao.fill(branco)
+        # mouse = pygame.mouse.get_pos()
+        # if botao_rect.collidepoint(mouse):
+        #     botao.fill(cinza)
+        # else:
+        #     botao.fill(branco)
 
         teclas = pygame.key.get_pressed()
         if teclas[pygame.K_r]:
             go = False
 
         screen.blit(txt_game_over,(x_go,y_go))
-        botao.blit(txt_restart,(x_restart,y_restart))
         screen.blit(botao,(x_botao,y_botao))
 
         # 60 FPS
