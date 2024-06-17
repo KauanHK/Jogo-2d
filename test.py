@@ -302,7 +302,6 @@ def criar_objetos():
     return robo,paredes
 
 def criar_botao(txt,size,color_button,color_txt):
-    cinza = (200,200,200)
 
     # Definindo o texto do botão
     font = pygame.font.Font(None,48)
