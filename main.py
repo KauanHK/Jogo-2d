@@ -127,7 +127,7 @@ class Nave:
     
         self.y += self.velocidade_y
     
-    def desenhar(self, screen, menu):
+    def desenhar(self, screen, menu: bool | None = False):
 
         cinza = (200,200,200,50)
         
@@ -140,9 +140,6 @@ class Nave:
             # Definindo as dimensões da borda
             largura = self.largura + 2*padding
             altura = self.altura + 2*padding
-
-            # Definindo a largura da borda
-            border_width = 5
 
             # Criando a borda e exibindo-a na tela
             surface = pygame.Surface((largura,altura),pygame.SRCALPHA)
@@ -295,9 +292,9 @@ class Parede:
         return False
         
 class Botao:
+
     def __init__(self,
                  txt: str,
-                 font_size: int, 
                  coordinate: tuple[int,int],  
                  size: tuple[int,int], 
                  color_button: tuple, 
@@ -305,7 +302,6 @@ class Botao:
 
         self.txt = txt
         self.event = txt
-        self.font_size = font_size
         self.coordinate = coordinate
         self.size = size
         self.color_button = color_button
@@ -315,8 +311,11 @@ class Botao:
 
     def atualizar_botao(self):
 
+        # Definindo o tamanho da letra
+        font_size = round(self.size[1] / 1.5)
+
         # Definindo o texto do botão
-        font = pygame.font.Font(None,self.font_size)
+        font = pygame.font.Font(None,font_size)
         txt = font.render(self.txt,False,self.color_txt)
 
         # Definindo a superfície do botão
@@ -344,6 +343,33 @@ class Botao:
     
     def get_event(self):
         return self.event
+    
+class Titulo:
+
+    def __init__(self, txt: str, font_size: int, coordinate: tuple[int,int], color: tuple[int,int,int] | None = (255,255,255)):
+        self.txt = txt
+        self.font_size = font_size
+        self.coordinate = coordinate
+        self.color = color
+
+        self.atualizar_titulo()
+    
+    def atualizar_titulo(self):
+        font = pygame.font.Font(None,self.font_size)
+        txt = font.render(self.txt,False,self.color)
+        self.titulo = txt
+
+        x = self.coordinate[0]
+        y = self.coordinate[1]
+        if x == 'center':
+            x = (screen.get_width() - txt.get_width()) // 2
+        
+        self.coordinate = (x,y)
+
+
+    
+    def exibir_titulo(self,screen):
+        screen.blit(self.titulo, self.coordinate)
 
 def atualizar_posicao(nave,paredes):
     nave.atualizar_posicao()
@@ -357,12 +383,6 @@ def desenhar_tela(screen,fundo,nave,paredes):
     nave.desenhar(screen,False)
     for parede in paredes:
         parede.desenhar(screen)
-    
-def verificar_colisao(nave,paredes):
-    for parede in paredes:
-        if parede.colidiu(nave):
-            return True
-    return False
 
 def exibir_pontuacao(screen,pontuacao,timer):
 
@@ -379,42 +399,13 @@ def exibir_pontuacao(screen,pontuacao,timer):
     timer_text = fonte.render("{:.2f}".format(timer), True, branco)
     x = LARGURA_TELA / 2 - (timer_text.get_width() / 2)
     y = 100
-    screen.blit(timer_text,(x,y))
+    screen.blit(timer_text,(x,y))    
 
-def waiting_press_key(screen,nave,paredes):
-
-    rodando = True
-    while rodando:
-        for evento in pygame.event.get():
-            if evento.type == pygame.QUIT:
-                rodando = False
-                pygame.quit()
-                quit()
-            if evento.type == pygame.KEYDOWN:
-                return True
-
-def interface_pause(screen,botao_continuar):
-
-    largura_tela = screen.get_width()
-    altura_tela = screen.get_height()
-
-    branco = (255,255,255)
-    preto = (0,0,0)
-
-    # Definindo as dimensões dos botões
-    largura_botao = largura_tela // 6
-    altura_botao = altura_tela // 10
-    size_botao = (largura_botao,altura_botao)
-
-    # Definindo as coordenadas do botão Continuar
-    x_continuar = (largura_tela - largura_botao) // 2
-    y_continuar = (altura_tela - altura_botao) // 2
-    dest_continuar = (x_continuar,y_continuar)
-
-    # Criando o botão Continuar
-    botao_continuar = Botao('Continuar',48,dest_continuar,size_botao,branco,preto)
-
-    botao_continuar.desenhar(screen)
+def verificar_colisao(nave,paredes):
+    for parede in paredes:
+        if parede.colidiu(nave):
+            return True
+    return False
 
 def criar_objetos(screen,nave_selecionada):
     # Criando a nave
@@ -435,26 +426,6 @@ def criar_objetos(screen,nave_selecionada):
     
     return nave,paredes
 
-def criar_botao(txt: str, font_size: int, size: tuple, color_button: tuple, color_txt: tuple):
-
-    # Definindo o texto do botão
-    font = pygame.font.Font(None,48)
-    botao_txt = font.render(txt,False,color_txt)
-
-    # Definindo a superfície do botão
-    botao_surf = pygame.Surface(size)
-
-    # Preenchendo o botão com a sua cor de fundo
-    botao_surf.fill(color_button)
-
-    # Definindo as coordenadas
-    x = (botao_surf.get_width() - botao_txt.get_width()) // 2
-    y = (botao_surf.get_height() - botao_txt.get_height()) // 2
-
-    botao_surf.blit(botao_txt,(x,y))
-
-    return botao_surf
-
 def criar_botoes_inicio(screen,colors: list[tuple]):
 
     preto = (0,0,0)
@@ -474,147 +445,35 @@ def criar_botoes_inicio(screen,colors: list[tuple]):
     coordinates = (x,y)
     size_botoes = (largura_botoes,altura_botoes)
 
-    botao_iniciar = Botao('Jogar',48,coordinates,size_botoes,colors[0],preto)
+    botao_iniciar = Botao('Jogar',coordinates,size_botoes,colors[0],preto)
 
     y += margem_bottom
     coordinates = (x,y)
-    botao_naves = Botao('Naves',48,coordinates,size_botoes,colors[1],preto)
+    botao_naves = Botao('Naves',coordinates,size_botoes,colors[1],preto)
 
     y += margem_bottom
     coordinates = (x,y)
-    botao_sair = Botao('Sair',48,coordinates,size_botoes,colors[2],preto)
+    botao_sair = Botao('Sair',coordinates,size_botoes,colors[2],preto)
 
     return [botao_iniciar,botao_naves,botao_sair]
 
-def criar_titulo(txt: str, txt_size: int, color: tuple):
-
-    font = pygame.font.Font(None,txt_size)
-    txt = font.render(txt,False,color)
-    return txt
-
-def main_loop(screen,fundo,nave_selecionada):
-
-    # Criar nave e obstáculos
-    nave,paredes = criar_objetos(screen,nave_selecionada)
-
-    # Cores
-    branco = (255,255,255)
-    preto = (0,0,0)
-
-    # Definindo as dimensões dos botões
-    largura_botao = LARGURA_TELA // 6
-    altura_botao = ALTURA_TELA // 10
-    size_botao = (largura_botao,altura_botao)
-
-    # Definindo as coordenadas do botão Continuar
-    x_continuar = (LARGURA_TELA - largura_botao) // 2
-    y_continuar = (ALTURA_TELA - altura_botao) // 2
-    dest_continuar = (x_continuar,y_continuar)
-
-    botao_continuar = Botao('Continuar',48,dest_continuar,size_botao,branco,preto)
-
-    # Clock para definir fps
-    clock = pygame.time.Clock()
-    fps = 60
-
-    timer = 0
-    pontuacao = 0
-
-    colidiu = False
-    espaco_pressionado = False
-    esc_pressionado = False
-    pausado = False
-    roubar = False
-
-    rodando = True
-    while rodando:
-        for evento in pygame.event.get():
-            if evento.type == pygame.QUIT:
-                rodando = False
-                pygame.quit()
-                quit()
-
-            if evento.type == pygame.KEYDOWN:
-                if evento.key == pygame.K_SPACE and not espaco_pressionado:
-                    nave.mover(2)
-                    espaco_pressionado = True
-                
-                elif evento.key == pygame.K_ESCAPE and not esc_pressionado:
-                    esc_pressionado = True 
-                    pausado = True if not pausado else False
-                    botao_continuar.desenhar(screen)
-
-                elif evento.key == pygame.K_UP:
-                    nave.mover(0)
-
-                elif evento.key == pygame.K_DOWN:
-                    nave.mover(1)
-                
-                elif evento.key == pygame.K_r:
-                    roubar = True
-                
-
-            elif evento.type == pygame.KEYUP:
-                if evento.key == pygame.K_SPACE:
-                    espaco_pressionado = False
-                if evento.key == pygame.K_ESCAPE:
-                    esc_pressionado = False
-                if evento.key == pygame.K_r:
-                    roubar = False
-                
-
-        # Contador do tempo
-        timer += 1 / fps
-
-        # Atualizar pontuação
-        for parede in paredes:
-            if parede.pontuacao(nave):
-                pontuacao += 1
-
-        # Desenhar todos os objetos e pontuação na tela
-        if not pausado:
-            atualizar_posicao(nave,paredes)
-            desenhar_tela(screen,fundo,nave,paredes)
-            exibir_pontuacao(screen,pontuacao,timer)
-        
-        # Verificar colisões
-        if not roubar:
-            colidiu = verificar_colisao(nave,paredes)
-            if colidiu:
-                event, nave_selecionada = game_over(screen,fundo,nave_selecionada,nave,paredes)
-                if event == 'roubar':
-                    roubar = True
-                else:
-                    return event, nave_selecionada
-                
-        
-        # Atualizar a tela
-        pygame.display.flip()
-
-        # Definindo o FPS
-        clock.tick(fps)
-
 def interface_inicial(screen,fundo):
 
-    preto = (0,0,0)
     branco = (255,255,255)
     cinza = (200,200,200)
 
     cores = [255,255,255]
 
-    titulo = criar_titulo('Jogo da Nave 2D',80,branco)
+    titulo_font_size = screen.get_height() // 8
+    y = screen.get_height() // 5
+    titulo = Titulo('Jogo da Nave 2D',titulo_font_size, ('center',y), tuple(cores))
 
-    largura_titulo = titulo.get_width()
-    altura_titulo = titulo.get_height()
-    x_titulo = (LARGURA_TELA - largura_titulo) // 2
-    y_titulo = (ALTURA_TELA - altura_titulo) // 5
-
-    cor_botao_iniciar = branco
-    cor_botao_naves = branco
-    cor_botao_sair = branco
-    colors = (cor_botao_iniciar,cor_botao_naves,cor_botao_sair)
+    colors = (branco,branco,branco)
     botoes = criar_botoes_inicio(screen,colors)
 
+    naves = None    
+
+    velocidade = ALTURA_TELA // 300
 
     clock = pygame.time.Clock()
     fps = 60
@@ -642,37 +501,58 @@ def interface_inicial(screen,fundo):
                 botao.color_button = branco
             botao.atualizar_botao()
 
-
-
-
-                            # botao.color_button = cinza
-                            # botao.atualizar_botao()
-            
-            # else:
-            #     mouse_pos = pygame.mouse.get_pos()
-            #     for i,botao,dest in enumerate(botoes):
-            #         if botao.get_rect().collidepoint(mouse_pos):
-            #             botoes[i] = criar_botao()
-
-            
-        titulo = criar_titulo('Jogo da Nave 2D',80,tuple(cores))
-
         escala_aleatoria = random.choice([0,1,2])
         diminuicao = random.choice([i for i in range(5)])
-
-        screen.blit(fundo,(0,0))
-        screen.blit(titulo,(x_titulo,y_titulo))
-        for botao in botoes:
-            botao.desenhar(screen)
-
         cores[escala_aleatoria] -= diminuicao
         if cores[escala_aleatoria] < 0:
             cores[escala_aleatoria] = 255
+        titulo.color = tuple(cores)
+        titulo.atualizar_titulo()
+
+        screen.blit(fundo,(0,0))
+        titulo.exibir_titulo(screen)
+        for botao in botoes:
+            botao.desenhar(screen)
+
+        naves = nave_voando(velocidade,naves)
 
         clock.tick(fps)
 
         pygame.display.flip()
 
+def criar_naves_voando():
+
+    nave_aleat = random.choice([i+1 for i in range(5)])
+
+    largura = LARGURA_TELA // 20
+    x = LARGURA_TELA // 10 - largura // 2
+    y = ALTURA_TELA
+    nave1 = Nave(nave_aleat,x,y,largura)
+
+    nave_aleat = random.choice([i+1 for i in range(5)])
+    x = LARGURA_TELA * 0.9 - largura // 2
+    nave2 = Nave(nave_aleat,x,y,largura)
+
+    naves = [nave1, nave2]
+    return naves
+
+def nave_voando(velocidade, naves: list[Nave,Nave] | None = None):
+
+    if not naves:
+        naves = criar_naves_voando()
+
+    naves_recriar = False
+    for i,nave in enumerate(naves):
+        nave.desenhar(screen)
+        nave.y -= velocidade
+
+        if nave.y < -100:
+            naves_recriar = True
+
+    if naves_recriar:
+        naves = criar_naves_voando()
+    return naves
+    
 def interface_naves(screen,fundo,nave_selecionada: int):
 
     preto = (0,0,0)
@@ -714,11 +594,13 @@ def interface_naves(screen,fundo,nave_selecionada: int):
     x_voltar = (LARGURA_TELA-largura)//2
     y_voltar = (ALTURA_TELA//5) * 4
 
-    botao_voltar = Botao('Voltar',48,(x_voltar,y_voltar),(largura,altura),branco,preto)
+    botao_voltar = Botao('Voltar',(x_voltar,y_voltar),(largura,altura),branco,preto)
 
-    titulo = criar_titulo('Selecione uma nave',80,branco)
-    x_titulo = (LARGURA_TELA - titulo.get_width()) // 2
-    y_titulo = ALTURA_TELA // 5
+    altura_tela = screen.get_height()
+    font_size = altura_tela // 10
+    y_titulo = altura_tela // 8
+
+    titulo = Titulo('Selecione uma nave',font_size,('center',y_titulo),branco)
 
     clock = pygame.time.Clock()
 
@@ -758,7 +640,7 @@ def interface_naves(screen,fundo,nave_selecionada: int):
         
 
         screen.blit(fundo,(0,0))
-        screen.blit(titulo,(x_titulo,y_titulo))
+        titulo.exibir_titulo(screen)
 
         for nave in naves:
             nave.desenhar(screen, True)
@@ -775,12 +657,9 @@ def game_over(screen,fundo,nave_selecionada,nave,paredes):
     vermelho = (255,0,0)
 
     # Definindo o texto Game Over
-    txt_game_over = criar_titulo('Game Over',150,vermelho)
-
-    # Definindo as coordenadas do texto Game Over
-    x_go = (screen.get_width() - txt_game_over.get_width()) // 2
-    y_go = (screen.get_height() - txt_game_over.get_height()) // 4
-
+    font_size = ALTURA_TELA // 6
+    y = ALTURA_TELA // 4
+    txt_game_over = Titulo('Game Over', font_size, ('center',y),vermelho)
 
     # Definindo as dimensões dos botões
     largura_botao = LARGURA_TELA // 6
@@ -811,13 +690,13 @@ def game_over(screen,fundo,nave_selecionada,nave,paredes):
     x = (surface.get_width() - largura_botao) // 2
     y = 50
 
-    botao_restart = Botao('Restart',48,(x,y),(largura_botao,altura_botao),branco,preto)
+    botao_restart = Botao('Restart',(x,y),(largura_botao,altura_botao),branco,preto)
 
     y += altura_botao * 1.5
-    botao_naves = Botao('Naves',48,(x,y),(largura_botao,altura_botao),branco,preto)
+    botao_naves = Botao('Naves',(x,y),(largura_botao,altura_botao),branco,preto)
 
     y += altura_botao * 1.5
-    botao_menu = Botao('Menu',48,(x,y),(largura_botao,altura_botao),branco,preto)
+    botao_menu = Botao('Menu',(x,y),(largura_botao,altura_botao),branco,preto)
 
     botoes = [botao_restart,botao_naves,botao_menu]
 
@@ -830,11 +709,6 @@ def game_over(screen,fundo,nave_selecionada,nave,paredes):
                 pygame.quit()
                 quit()
             elif evento.type == pygame.KEYDOWN:
-                if evento.key == pygame.K_ESCAPE:
-                    go = False
-                    pygame.quit()
-                    quit()
-                
                 
                 if evento.key == pygame.K_r:
                     return 'roubar'
@@ -866,7 +740,7 @@ def game_over(screen,fundo,nave_selecionada,nave,paredes):
 
         screen.blit(fundo,(0,0))
         desenhar_tela(screen,fundo,nave,paredes)
-        screen.blit(txt_game_over,(x_go,y_go))
+        txt_game_over.exibir_titulo(screen)
         screen.blit(surface,(surface_pos))
 
         mouse_pos = pygame.mouse.get_pos()
@@ -877,6 +751,164 @@ def game_over(screen,fundo,nave_selecionada,nave,paredes):
 
         # Atualizando a tela
         pygame.display.flip()
+
+def pause(screen, surface, titulo, botoes, coord_surface):
+    branco = (255,255,255)
+    cinza = (200,200,200,100)
+
+    surface.fill(cinza)
+
+    titulo.atualizar_titulo()
+
+    mouse_pos = pygame.mouse.get_pos()
+    for botao in botoes:
+        relative_mouse_pos = (mouse_pos[0] - coord_surface[0], mouse_pos[1] - coord_surface[1])
+        if botao.collide_mouse(relative_mouse_pos):
+            botao.color_button = cinza
+        else:
+            botao.color_button = branco
+        botao.atualizar_botao()
+        botao.desenhar(surface)
+    
+    for i
+    titulo.exibir_titulo(screen)
+    return surface
+
+def main_loop(screen,fundo,nave_selecionada):
+
+    # Criar nave e obstáculos
+    nave,paredes = criar_objetos(screen,nave_selecionada)
+
+    # Cores
+    branco = (255,255,255)
+    preto = (0,0,0)
+
+    # Definindo as dimensões dos botões
+    largura_botao = LARGURA_TELA // 6
+    altura_botao = ALTURA_TELA // 10
+    size_botao = (largura_botao,altura_botao)
+
+
+    # Criando a superfície dos botões
+    surface = pygame.Surface((LARGURA_TELA // 3, ALTURA_TELA * 0.7), pygame.SRCALPHA)
+    x_surface_pause = (LARGURA_TELA - surface.get_width()) // 2
+    y_surface_pause = (ALTURA_TELA - surface.get_height()) // 2
+    coord_surface = (x_surface_pause, y_surface_pause)
+    
+    # Título 'Jogo Pausado'
+    font_size = surface.get_width() // 10
+    x = 'center'
+    y = y_surface_pause + 50
+    jogo_pausado = Titulo('Jogo Pausado',font_size,(x,y))
+
+    # Definindo as coordenadas do botão Continuar
+    x = (surface.get_width() - largura_botao) // 2
+    y = (surface.get_height() - altura_botao) // 2
+    dest_continuar = (x,y)
+
+    botao_continuar = Botao('Continuar',dest_continuar,size_botao,branco,preto)
+
+    y += altura_botao * 1.5
+    botao_sair = Botao('Menu', (x,y), size_botao,branco,preto)
+
+
+    botoes = [botao_continuar, botao_sair]
+
+    # Clock para definir fps
+    clock = pygame.time.Clock()
+    fps = 60
+
+    timer = 0
+    pontuacao = 0
+
+    colidiu = False
+    espaco_pressionado = False
+    esc_pressionado = False
+    pausado = False
+    roubar = False
+
+    rodando = True
+    while rodando:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                rodando = False
+                pygame.quit()
+                quit()
+
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_SPACE and not espaco_pressionado:
+                    nave.mover(2)
+                    espaco_pressionado = True
+                
+                elif evento.key == pygame.K_ESCAPE and not esc_pressionado:
+                    # Jogo pausado
+                    esc_pressionado = True 
+                    pausado = True if not pausado else False
+
+                elif evento.key == pygame.K_UP:
+                    nave.mover(0)
+
+                elif evento.key == pygame.K_DOWN:
+                    nave.mover(1)
+                
+                elif evento.key == pygame.K_r:
+                    roubar = True
+                
+
+            elif evento.type == pygame.KEYUP:
+                if evento.key == pygame.K_SPACE:
+                    espaco_pressionado = False
+                if evento.key == pygame.K_ESCAPE:
+                    esc_pressionado = False
+                if evento.key == pygame.K_r:
+                    roubar = False
+            
+            elif evento.type == pygame.MOUSEBUTTONDOWN and pausado:
+                for botao in botoes:
+                    relative_mouse_pos = (evento.pos[0] - coord_surface[0], evento.pos[1] - coord_surface[1])
+                    if botao.collide_mouse(relative_mouse_pos):
+                        if botao.get_event() == 'Continuar':
+                            pausado = False
+                        else:
+                            return None, nave_selecionada
+
+                
+        if pausado:
+            surface_pause = pause(screen, surface, jogo_pausado, botoes, coord_surface)
+
+
+        # Contador do tempo
+        timer += 1 / fps
+
+        # Atualizar pontuação
+        for parede in paredes:
+            if parede.pontuacao(nave):
+                pontuacao += 1
+
+        # Desenhar todos os objetos e pontuação na tela
+        desenhar_tela(screen,fundo,nave,paredes)
+        if pausado:
+            screen.blit(surface_pause, coord_surface)
+        else:
+            atualizar_posicao(nave,paredes)
+            exibir_pontuacao(screen,pontuacao,timer)
+        
+        # Verificar colisões
+        if not roubar:
+            colidiu = verificar_colisao(nave,paredes)
+            if colidiu:
+                event, nave_selecionada = game_over(screen,fundo,nave_selecionada,nave,paredes)
+                if event == 'roubar':
+                    roubar = True
+                else:
+                    return event, nave_selecionada
+                
+        
+        # Atualizar a tela
+        pygame.display.flip()
+
+        # Definindo o FPS
+        clock.tick(fps)
 
 def main(screen,fundo):
      # Definir a primeira nave como a nave selecionada
