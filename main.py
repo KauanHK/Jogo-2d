@@ -346,9 +346,10 @@ class Botao:
     
 class Titulo:
 
-    def __init__(self, txt: str, font_size: int, coordinate: tuple[int,int], color: tuple[int,int,int] | None = (255,255,255)):
+    def __init__(self, txt: str, font_size: int,screen, coordinate: tuple[int,int], color: tuple[int,int,int] | None = (255,255,255)):
         self.txt = txt
         self.font_size = font_size
+        self.screen = screen
         self.coordinate = coordinate
         self.color = color
 
@@ -362,7 +363,7 @@ class Titulo:
         x = self.coordinate[0]
         y = self.coordinate[1]
         if x == 'center':
-            x = (screen.get_width() - txt.get_width()) // 2
+            x = (self.screen.get_width() - self.titulo.get_width()) // 2
         
         self.coordinate = (x,y)
 
@@ -370,6 +371,8 @@ class Titulo:
     
     def exibir_titulo(self,screen):
         screen.blit(self.titulo, self.coordinate)
+        if self.txt.split()[0] == 'Pontuação':
+            pygame.draw.rect(screen,(255,255,255),(self.coordinate[0],self.coordinate[1],100,100))
 
 def atualizar_posicao(nave,paredes):
     nave.atualizar_posicao()
@@ -466,7 +469,7 @@ def interface_inicial(screen,fundo):
 
     titulo_font_size = screen.get_height() // 8
     y = screen.get_height() // 5
-    titulo = Titulo('Jogo da Nave 2D',titulo_font_size, ('center',y), tuple(cores))
+    titulo = Titulo('Jogo da Nave 2D',titulo_font_size, screen, ('center',y), tuple(cores))
 
     colors = (branco,branco,branco)
     botoes = criar_botoes_inicio(screen,colors)
@@ -600,7 +603,7 @@ def interface_naves(screen,fundo,nave_selecionada: int):
     font_size = altura_tela // 10
     y_titulo = altura_tela // 8
 
-    titulo = Titulo('Selecione uma nave',font_size,('center',y_titulo),branco)
+    titulo = Titulo('Selecione uma nave',font_size,screen,('center',y_titulo),branco)
 
     clock = pygame.time.Clock()
 
@@ -649,7 +652,7 @@ def interface_naves(screen,fundo,nave_selecionada: int):
         clock.tick(60)
         pygame.display.flip()
 
-def game_over(screen,fundo,nave_selecionada,nave,paredes):
+def game_over(pontuacao, screen,fundo,nave_selecionada,nave,paredes):
 
     branco = (255,255,255)
     preto = (0,0,0)
@@ -658,29 +661,19 @@ def game_over(screen,fundo,nave_selecionada,nave,paredes):
 
     # Definindo o texto Game Over
     font_size = ALTURA_TELA // 6
-    y = ALTURA_TELA // 4
-    txt_game_over = Titulo('Game Over', font_size, ('center',y),vermelho)
+    y = ALTURA_TELA // 8
+    txt_game_over = Titulo('Game Over', font_size,screen, ('center',y),vermelho)
+
 
     # Definindo as dimensões dos botões
     largura_botao = LARGURA_TELA // 6
     altura_botao = ALTURA_TELA // 10
 
-    # Definindo as coordenadas do botão Restart
-    x_restart = (LARGURA_TELA - largura_botao) // 2
-    y_restart = (ALTURA_TELA - altura_botao) // 2
-
-    # Definindo as coordenadas do botão Menu
-    x_naves = x_restart
-    y_naves = y_restart + 1.5*altura_botao
-    
-    # Definindo as coordenadas do botão Menu
-    x_menu = x_naves
-    y_menu = y_naves + 1.5*altura_botao
-    
+    largura_surface = largura_botao + 100
+    altura_surface = 6.5*altura_botao
+    surface = pygame.Surface((largura_surface,altura_surface),pygame.SRCALPHA)
 
 
-    surface = pygame.Surface((largura_botao+100,4.5*altura_botao+100),pygame.SRCALPHA)
-    surface_pos = (x_restart-50,y_restart-50)
 
     rect = pygame.Rect(0,0,surface.get_width(),surface.get_height())
     cor = (200,200,200,50)
@@ -688,17 +681,36 @@ def game_over(screen,fundo,nave_selecionada,nave,paredes):
 
     # Criando os botões
     x = (surface.get_width() - largura_botao) // 2
-    y = 50
+    y = surface.get_height() - altura_botao - 50
 
-    botao_restart = Botao('Restart',(x,y),(largura_botao,altura_botao),branco,preto)
-
-    y += altura_botao * 1.5
-    botao_naves = Botao('Naves',(x,y),(largura_botao,altura_botao),branco,preto)
-
-    y += altura_botao * 1.5
     botao_menu = Botao('Menu',(x,y),(largura_botao,altura_botao),branco,preto)
 
+    y -= 1.5 * altura_botao
+    botao_naves = Botao('Naves',(x,y),(largura_botao,altura_botao),branco,preto)
+
+    y -= altura_botao * 1.5
+    botao_restart = Botao('Restart',(x,y),(largura_botao,altura_botao),branco,preto)
+
+    y -= altura_botao
+    pontuacao_titulo = Titulo(f'Pontuação: {pontuacao}', font_size//2, surface, ('center', y))
+    
+    # # Criando os botões
+    # x = (surface.get_width() - largura_botao) // 2
+    # y = 50
+
+    # botao_restart = Botao('Restart',(x,y),(largura_botao,altura_botao),branco,preto)
+
+    # y += altura_botao * 1.5
+    # botao_naves = Botao('Naves',(x,y),(largura_botao,altura_botao),branco,preto)
+
+    # y += altura_botao * 1.5
+    # botao_menu = Botao('Menu',(x,y),(largura_botao,altura_botao),branco,preto)
+
     botoes = [botao_restart,botao_naves,botao_menu]
+
+    x = (LARGURA_TELA - surface.get_width()) // 2
+    y = (ALTURA_TELA - surface.get_height()) * 0.7
+    surface_pos = (x,y)
 
     go = True
     clock = pygame.time.Clock()
@@ -711,7 +723,7 @@ def game_over(screen,fundo,nave_selecionada,nave,paredes):
             elif evento.type == pygame.KEYDOWN:
                 
                 if evento.key == pygame.K_r:
-                    return 'roubar'
+                    return 'roubar', nave_selecionada
                 
             elif evento.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = evento.pos
@@ -740,7 +752,10 @@ def game_over(screen,fundo,nave_selecionada,nave,paredes):
 
         screen.blit(fundo,(0,0))
         desenhar_tela(screen,fundo,nave,paredes)
+        
         txt_game_over.exibir_titulo(screen)
+        pontuacao_titulo.exibir_titulo(surface)
+
         screen.blit(surface,(surface_pos))
 
         mouse_pos = pygame.mouse.get_pos()
@@ -752,13 +767,15 @@ def game_over(screen,fundo,nave_selecionada,nave,paredes):
         # Atualizando a tela
         pygame.display.flip()
 
-def pause(screen, surface, titulo, botoes, coord_surface):
+def pause(surface, titulo, titulo_pontuacao, botoes, coord_surface):
     branco = (255,255,255)
     cinza = (200,200,200,100)
 
     surface.fill(cinza)
 
     titulo.atualizar_titulo()
+    titulo.exibir_titulo(surface)
+    titulo_pontuacao.exibir_titulo(surface)
 
     mouse_pos = pygame.mouse.get_pos()
     for botao in botoes:
@@ -770,8 +787,6 @@ def pause(screen, surface, titulo, botoes, coord_surface):
         botao.atualizar_botao()
         botao.desenhar(surface)
     
-    for i
-    titulo.exibir_titulo(screen)
     return surface
 
 def main_loop(screen,fundo,nave_selecionada):
@@ -796,10 +811,16 @@ def main_loop(screen,fundo,nave_selecionada):
     coord_surface = (x_surface_pause, y_surface_pause)
     
     # Título 'Jogo Pausado'
-    font_size = surface.get_width() // 10
+    font_size = surface.get_width() // 6
     x = 'center'
-    y = y_surface_pause + 50
-    jogo_pausado = Titulo('Jogo Pausado',font_size,(x,y))
+    y = surface.get_height() * 0.1
+    jogo_pausado = Titulo('Jogo Pausado',font_size,surface,(x,y))
+
+    # Pontuação
+    x = 'center'
+    y += 1.5 * jogo_pausado.titulo.get_height()
+    font_size /= 2
+    pontuacao_txt = Titulo(f'Pontuação: 0', round(font_size), surface, (x,y))
 
     # Definindo as coordenadas do botão Continuar
     x = (surface.get_width() - largura_botao) // 2
@@ -872,9 +893,10 @@ def main_loop(screen,fundo,nave_selecionada):
                         else:
                             return None, nave_selecionada
 
-                
+        pontuacao_txt.txt = f'Pontuação: {pontuacao}'
+        pontuacao_txt.atualizar_titulo()
         if pausado:
-            surface_pause = pause(screen, surface, jogo_pausado, botoes, coord_surface)
+            surface_pause = pause(surface, jogo_pausado, pontuacao_txt, botoes, coord_surface)
 
 
         # Contador do tempo
@@ -897,7 +919,7 @@ def main_loop(screen,fundo,nave_selecionada):
         if not roubar:
             colidiu = verificar_colisao(nave,paredes)
             if colidiu:
-                event, nave_selecionada = game_over(screen,fundo,nave_selecionada,nave,paredes)
+                event, nave_selecionada = game_over(pontuacao, screen,fundo,nave_selecionada,nave,paredes)
                 if event == 'roubar':
                     roubar = True
                 else:
