@@ -2,8 +2,6 @@ import pygame
 import random
 import os
 
-import pygame.draw_py
-
 # Inicializar o Pygame
 pygame.init()
 
