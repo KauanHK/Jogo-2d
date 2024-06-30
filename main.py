@@ -2,8 +2,6 @@ import pygame
 import random
 import os
 
-import pygame.draw_py
-
 # Inicializar o Pygame
 pygame.init()
 
@@ -243,7 +241,7 @@ class Parede:
 
     def atualizar_posicao(self,paredes):
         self.x -= self.velocidade_x
-        self.velocidade_x *= 1.0002
+        self.velocidade_x *= 1.00035
         
         if self.x < - self.largura_imagem:
             parede_anterior = paredes[self.id-1]
@@ -374,6 +372,92 @@ class Titulo:
         if self.txt.split()[0] == 'Pontuação':
             pygame.draw.rect(screen,(255,255,255),(self.coordinate[0],self.coordinate[1],100,100))
 
+class Cores:
+
+    '''
+        Lógica do degradê RGB
+        
+        1. (255,0,0)
+        2. (255,255,0)
+        3. (0,255,0)
+        4. (0,255,255)
+        5. (0,0,255)
+        6. (255,0,255)
+        7. (255,0,0)
+
+    '''
+
+    def __init__(self,r,g,b):
+        self.r = r
+        self.g = g
+        self.b = b
+        
+    def get_next_color(self):
+
+        cor = (self.r, self.g, self.b)
+
+        # Se está na fase 1
+        if cor == (255,0,0):
+            # Valores fase 1 -> 2
+            self.valor_r = 0
+            self.valor_g = 3
+            self.valor_b = 0
+        
+        # Chegou fase 2
+        elif cor == (255,255,0):
+            # Valores fase 2 -> 3
+            self.valor_r = -3
+            self.valor_g = 0
+            self.valor_b = 0
+
+        # Chegou fase 3
+        elif cor == (0,255,0):
+            # Valores fase 3 -> 4
+            self.valor_r = 0
+            self.valor_g = 0
+            self.valor_b = 3
+
+        # Chegou fase 4
+        elif cor == (0,255,255):
+            # Valores fase 4 -> 5
+            self.valor_r = 0
+            self.valor_g = -3
+            self.valor_b = 0
+        
+        # Chegou fase 5
+        elif cor == (0,0,255):
+            # Valores para fase 5 -> 6
+            self.valor_r = 3
+            self.valor_g = 0
+            self.valor_b = 0
+        
+        # Chegou fase 6
+        elif cor == (255,0,255):
+            # Valores para fase 6 -> 7
+            self.valor_r = 0
+            self.valor_g = 0
+            self.valor_b = -3
+
+        self.r += self.valor_r
+        self.g += self.valor_g
+        self.b += self.valor_b
+
+        if self.r > 255:
+            self.r = 255
+        if self.g > 255:
+            self.g = 255
+        if self.b > 255:
+            self.b = 255
+        
+        if self.r < 0:
+            self.r = 0
+        if self.g < 0:
+            self.g = 0
+        if self.b < 0:
+            self.b = 0
+
+        return self.r,self.g,self.b
+
 def atualizar_posicao(nave,paredes):
     nave.atualizar_posicao()
     for parede in paredes:
@@ -465,11 +549,11 @@ def interface_inicial(screen,fundo):
     branco = (255,255,255)
     cinza = (200,200,200)
 
-    cores = [255,255,255]
-
     titulo_font_size = screen.get_height() // 8
     y = screen.get_height() // 5
-    titulo = Titulo('Jogo da Nave 2D',titulo_font_size, screen, ('center',y), tuple(cores))
+
+    cor_titulo = Cores(255,0,0)
+    titulo = Titulo('Jogo da Nave 2D',titulo_font_size, screen, ('center',y), branco)
 
     colors = (branco,branco,branco)
     botoes = criar_botoes_inicio(screen,colors)
@@ -506,10 +590,12 @@ def interface_inicial(screen,fundo):
 
         escala_aleatoria = random.choice([0,1,2])
         diminuicao = random.choice([i for i in range(5)])
-        cores[escala_aleatoria] -= diminuicao
-        if cores[escala_aleatoria] < 0:
-            cores[escala_aleatoria] = 255
-        titulo.color = tuple(cores)
+        # cores[escala_aleatoria] -= diminuicao
+        # if cores[escala_aleatoria] < 0:
+            # cores[escala_aleatoria] = 255
+        
+        cor = cor_titulo.get_next_color()
+        titulo.color = tuple(cor)
         titulo.atualizar_titulo()
 
         screen.blit(fundo,(0,0))
