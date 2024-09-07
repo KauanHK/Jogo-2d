@@ -1,4 +1,5 @@
 import pygame
+from typing import Literal, Union
 from objetos import Nave, Parede
 from pontuacao import carregar_pontuacao, salvar_pontuacao
 from imagens import carregar_imagem
@@ -37,7 +38,7 @@ class MenuPrincipal:
         for botao in self.botoes:
             botao.exibir()
 
-    def loadEvent(self, event):
+    def loadEvent(self, event) -> Literal['sair'] | Union["Jogo", "MenuNaves"] | None:
         for botao in self.botoes:
             botao.hover()    
             if botao.clicked(event):
@@ -53,31 +54,58 @@ class MenuNaves:
         self.screen = screen
         self.largura_tela, self.altura_tela = self.screen.get_size()
         self.botao_voltar = Botao(self.screen, MenuPrincipal, ('center', self.screen.get_height()*0.8), (200,70), 'Voltar', 40)
-        self.fundo_nave_selecionada = pygame.Surface((150, 150), pygame.SRCALPHA)
+
+    def exibirNaves(self):
+        '''Exibe todas as cinco naves do menu'''
+
+        # Criar a superfície onde ficarão todas as 5 naves
+        size = (self.largura_tela * 0.8, 150)
+        surface = pygame.Surface(size, pygame.SRCALPHA)
+
+
+
+        for i, img in enumerate(self.IMAGENS):
+            fundo_nave_selecionada = pygame.Surface((150, 150), pygame.SRCALPHA)
+            if i+1 == Nave.selecionada:
+                fundo_nave_selecionada.fill(CINZA_TRANSPARENTE)
+                
+            centro = img.get_rect(center = fundo_nave_selecionada.get_rect().center).topleft
+            fundo_nave_selecionada.blit(img, centro)
+
+            x = ((size[0] - img.get_width()) / 5) * i
+            surface.blit(fundo_nave_selecionada, (x, 0))
+        
+        x = surface.get_rect(center = self.screen.get_rect().center).left
+        y = self.altura_tela * 0.5
+        self.screen.blit(surface, (x,y))
+
+
+
+
+        # self.img_rects = []
+        
+        # x = (self.largura_tela / 8)
+        # x_aumento = x * 8/5
+        # x -= 75
+        # y = self.altura_tela / 2
+        # for i,img in enumerate(self.IMAGENS):
+        #     if i+1 == Nave.selecionada:
+        #         # Coordenada para deixar a img da nave no centro do fundo
+        #         coord = img.get_rect(center=self.fundo_nave_selecionada.get_rect().center).topleft
+        #         self.fundo_nave_selecionada.fill(CINZA_TRANSPARENTE)
+        #         self.fundo_nave_selecionada.blit(img, coord)
+        #         self.screen.blit(self.fundo_nave_selecionada, (x-25,y-25))
+        #     else:
+        #         self.screen.blit(img, (x,y))
+        #     self.img_rects.append(img.get_rect(topleft=(x,y)))
+        #     x += x_aumento
 
     def run(self):
         self.botao_voltar.exibir()
         self.exibirNaves()
     
-    def exibirNaves(self):
-        self.img_rects = []
-        
-        x = (self.largura_tela / 8)
-        x_aumento = x * 8/5
-        x -= 75
-        y = self.altura_tela / 2
-        for i,img in enumerate(self.IMAGENS):
-            if i+1 == Nave.selecionada:
-                coord = img.get_rect(center=self.fundo_nave_selecionada.get_rect().center).topleft
-                self.fundo_nave_selecionada.fill(CINZA_TRANSPARENTE)
-                self.fundo_nave_selecionada.blit(img, coord)
-                self.screen.blit(self.fundo_nave_selecionada, (x-25,y-25))
-            else:
-                self.screen.blit(img, (x,y))
-            self.img_rects.append(img.get_rect(topleft=(x,y)))
-            x += x_aumento
     
-    def loadEvent(self, event):
+    def loadEvent(self, event) -> MenuPrincipal | None:
         self.botao_voltar.hover()
         if self.botao_voltar.clicked(event):
             return self.botao_voltar.event
@@ -211,7 +239,7 @@ class Jogo:
         y = 100
         self.screen.blit(txt_pontuacao, (x,y))
 
-    def loadEvent(self, event: pygame.event.Event):
+    def loadEvent(self, event: pygame.event.Event) -> MenuPrincipal | MenuNaves | None:
         for botao in self.botoes_game_over:
             botao.hover()
         if event.type == pygame.KEYDOWN:
@@ -249,29 +277,3 @@ class Jogo:
                 self.pontuacao += 1
                 parede.pontuou = True
 
-class Interface:
-
-    def __init__(self, screen: pygame.Surface, interface: object):
-        self.screen = screen
-        self.interface = interface(self.screen)
-        self.pontuacao = 0
-    
-    def run(self):
-        '''Executa a interface atual'''
-        self.interface.run()
-
-    def loadEvent(self, event):
-        '''Carrega o evento e define qual interface será executada.
-        
-        Retorna False se o usuário clicar em 'sair', se não True'''
-        interface = self.interface.loadEvent(event)
-        if interface == 'sair':
-            # Atualizar a variável rodando em 'main.py' para False para finalizar o loop do jogo
-            return False
-        elif interface is None:
-            # Se nenhum evento for detectado, continuar rodando o jogo na mesma interface
-            return True
-        
-        # Foi retornada alguma interface, portanto executá-la e continuar loop do jogo
-        self.interface = interface(self.screen)
-        return True
