@@ -1,4 +1,3 @@
-
 def main():
     from jogo import Manager
 

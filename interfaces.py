@@ -52,17 +52,22 @@ class MenuNaves:
 
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
+        self.nave_selecionada = Nave.selecionada
         self.largura_tela, self.altura_tela = self.screen.get_size()
         self.botao_voltar = Botao(self.screen, MenuPrincipal, ('center', self.screen.get_height()*0.8), (200,70), 'Voltar', 40)
+        self.criar_surface_naves()
 
-    def exibirNaves(self):
+    def criar_surface_naves(self):
         '''Exibe todas as cinco naves do menu'''
 
         # Criar a superfície onde ficarão todas as 5 naves
         size = (self.largura_tela * 0.8, 150)
-        surface = pygame.Surface(size, pygame.SRCALPHA)
+        self.surface_naves = pygame.Surface(size, pygame.SRCALPHA)
+        self.x_surface = self.surface_naves.get_rect(center = self.screen.get_rect().center).left
+        self.y_surface = self.altura_tela * 0.5
+        
 
-
+        self.img_rects = []
 
         for i, img in enumerate(self.IMAGENS):
             fundo_nave_selecionada = pygame.Surface((150, 150), pygame.SRCALPHA)
@@ -70,42 +75,29 @@ class MenuNaves:
                 fundo_nave_selecionada.fill(CINZA_TRANSPARENTE)
                 
             centro = img.get_rect(center = fundo_nave_selecionada.get_rect().center).topleft
+
             fundo_nave_selecionada.blit(img, centro)
 
-            x = ((size[0] - img.get_width()) / 5) * i
-            surface.blit(fundo_nave_selecionada, (x, 0))
+            x = (size[0] / 5) * i
+            self.surface_naves.blit(fundo_nave_selecionada, (x, 0))
+
+            x += self.x_surface + 25
+            y = self.y_surface + 25
+            self.img_rects.append(img.get_rect(topleft = (x,y), height = img.get_height()+25))
         
-        x = surface.get_rect(center = self.screen.get_rect().center).left
-        y = self.altura_tela * 0.5
-        self.screen.blit(surface, (x,y))
 
-
-
-
-        # self.img_rects = []
-        
-        # x = (self.largura_tela / 8)
-        # x_aumento = x * 8/5
-        # x -= 75
-        # y = self.altura_tela / 2
-        # for i,img in enumerate(self.IMAGENS):
-        #     if i+1 == Nave.selecionada:
-        #         # Coordenada para deixar a img da nave no centro do fundo
-        #         coord = img.get_rect(center=self.fundo_nave_selecionada.get_rect().center).topleft
-        #         self.fundo_nave_selecionada.fill(CINZA_TRANSPARENTE)
-        #         self.fundo_nave_selecionada.blit(img, coord)
-        #         self.screen.blit(self.fundo_nave_selecionada, (x-25,y-25))
-        #     else:
-        #         self.screen.blit(img, (x,y))
-        #     self.img_rects.append(img.get_rect(topleft=(x,y)))
-        #     x += x_aumento
+    def exibir_naves(self):
+        self.screen.blit(self.surface_naves, (self.x_surface, self.y_surface))
 
     def run(self):
         self.botao_voltar.exibir()
-        self.exibirNaves()
+        if self.nave_selecionada != Nave.selecionada:
+            self.nave_selecionada = Nave.selecionada
+            self.criar_surface_naves()
+        self.exibir_naves()
     
     
-    def loadEvent(self, event) -> MenuPrincipal | None:
+    def loadEvent(self, event: pygame.event.Event) -> MenuPrincipal | None:
         self.botao_voltar.hover()
         if self.botao_voltar.clicked(event):
             return self.botao_voltar.event
