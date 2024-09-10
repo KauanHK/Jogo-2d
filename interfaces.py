@@ -6,6 +6,7 @@ from imagens import carregar_imagem
 from titulo import Titulo
 from botao import Botao
 from cores import *
+from popup import PopUp
 
 
 class MenuPrincipal:
@@ -52,44 +53,59 @@ class MenuNaves:
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
         self.nave_selecionada = Nave.selecionada
-        self.largura_tela, self.altura_tela = self.screen.get_size()
-        self.botao_voltar = Botao(self.screen, MenuPrincipal, ('center', self.screen.get_height()*0.8), (200,70), 'Voltar', 40)
+        self.criar_botao_voltar()
+        self.carregar_imagens()
         self.criar_surface_naves()
+
+    def criar_botao_voltar(self) -> None:
+        self.botao_voltar = Botao(self.screen, MenuPrincipal, ('center', self.screen.get_height()*0.8), (200,70), 'Voltar', 40)
+
+    def carregar_imagens(self) -> None:
         self.IMAGENS = [carregar_imagem(f'imagens' ,f'nave{i}.png', size=(100,'auto')) for i in range(1,6)]
 
-    def criar_surface_naves(self):
-        '''Exibe todas as cinco naves do menu'''
+    def _criar_surface_naves(self) -> None:
+        '''Método interno para criar o Surface onde ficarão os surface das naves'''
 
         # Criar a superfície onde ficarão todas as 5 naves
-        size = (self.largura_tela * 0.8, 150)
+        size = (self.screen.get_width() * 0.8, 150)
         self.surface_naves = pygame.Surface(size, pygame.SRCALPHA)
         self.x_surface = self.surface_naves.get_rect(center = self.screen.get_rect().center).left
         self.y_surface = self.altura_tela * 0.5
-        
 
+    def criar_surface_nave(self, img: pygame.Surface,  nave_i: int) -> pygame.Surface:
+        '''Cria um Surface onde ficará a imagem da nave. O fundo é cinza transparente caso a nave esteja selecionada'''
+        surface_fundo_nave = pygame.Surface((150, 150), pygame.SRCALPHA)
+        if nave_i == self.nave_selecionada:
+            surface_fundo_nave.fill(CINZA_TRANSPARENTE)
+        coord = img.get_rect(center = surface_fundo_nave.get_rect().center).topleft
+        surface_fundo_nave.blit(img, coord)
+        return surface_fundo_nave
+
+    def criar_imgs_rects(self, img: pygame.Surface, x: int, y: int) -> None:
+        '''Cria a lista self.img_rects, que armazena os Rect's de todas as imagens das naves.'''
         self.img_rects = []
-
         for i, img in enumerate(self.IMAGENS):
-            fundo_nave_selecionada = pygame.Surface((150, 150), pygame.SRCALPHA)
-            if i+1 == Nave.selecionada:
-                fundo_nave_selecionada.fill(CINZA_TRANSPARENTE)
-                
-            centro = img.get_rect(center = fundo_nave_selecionada.get_rect().center).topleft
-
-            fundo_nave_selecionada.blit(img, centro)
-
-            x = (size[0] / 5) * i
-            self.surface_naves.blit(fundo_nave_selecionada, (x, 0))
-
-            x += self.x_surface + 25
+            x = self.x_surface + (self.surface_naves.get_width() / 5 * i) + 25
             y = self.y_surface + 25
-            self.img_rects.append(img.get_rect(topleft = (x,y), height = img.get_height()+25))
+            rect = img.get_rect(topleft = (x,y), height = img.get_height()+25)
+            self.img_rects.append(rect)
+
+    def criar_surface_naves(self) -> None:
+        '''Cria a superfície onde aparecem todas as naves do jogo no menu'''
+        self._criar_surface_naves()
+        for i, img in enumerate(self.IMAGENS):
+            # Isso cria o Surface da nave, com um fundo cinza transparente se for a nave selecionada
+            surface_fundo_nave = self.criar_surface_nave(img, i+1)
+
+            # Adicionar o Surface da nave ao Surface das naves
+            x = self.surface_naves.get_width() / 5 * i
+            self.surface_naves.blit(surface_fundo_nave, (x, 0))
         
 
-    def exibir_naves(self):
+    def exibir_naves(self) -> None:
         self.screen.blit(self.surface_naves, (self.x_surface, self.y_surface))
 
-    def run(self):
+    def run(self) -> None:
         self.botao_voltar.exibir()
         if self.nave_selecionada != Nave.selecionada:
             self.nave_selecionada = Nave.selecionada
@@ -108,53 +124,20 @@ class MenuNaves:
 
 class Jogo:
 
-    class Criar:
-
-        @staticmethod
-        def paredes(screen: pygame.Surface):
-            largura_tela = screen.get_width()
-            largura_parede = largura_tela / 10
-            largura_parede = 80 if largura_parede > 80 else largura_parede
-            x = largura_tela * 0.95
-            x_aumento = largura_tela / 4
-            img = carregar_imagem('imagens', 'obstaculo.jpg', size=(largura_parede,'auto'))
-            paredes = []
-            for i in range(4):
-                paredes.append(Parede(screen, img, x))
-                x += x_aumento
-            return paredes
-        
-        class PopUp:
-            def __init__(self,
-                         screen: pygame.Surface,
-                         size: tuple[int,int] | None = (200,200),
-                         color: tuple[int,int,int] | None = (255,255,255)):
-                self.screen = screen
-                self.size = size
-                self.color = color
-
-                self.interface = pygame.Surface(size, pygame.SRCALPHA)
-                self.interface.fill(self.color)
-                self.coord = self.interface.get_rect(center=self.screen.get_rect().center).topleft
-
-            def exibir(self):
-                self.screen.blit(self.interface, self.coord)
-
-            def blit(self, surface: pygame.Surface, dest: tuple[int,int]):
-                self.interface.blit(surface, dest)
-
-
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
-        self.largura_tela = self.screen.get_width()
-        self.altura_tela = self.screen.get_height()
 
         self.nave = Nave(screen)
-        self.paredes = self.Criar.paredes(self.screen)
-        self.img_mask = pygame.mask.from_surface(self.paredes[0].all_paredes[0].img)
-        self.interface_pause, self.interface_game_over = self.criar_interfaces()
-        self.titulo_game_over = self.criar_titulo_game_over()
-        self.botoes_game_over = self.criar_botoes_game_over()
+        self.paredes = self.criar_paredes()
+        self.criar_titulo_game_over()
+        self.criar_botoes_game_over()
+        self.interface_pause = self.criar_popup()
+        self.interface_game_over = self.criar_popup()
+        self.nave_mask = self.nave.getMask()
+        
+        # Só é necessário pegar o Mask de um fragmento, pois todos os fragmentos são iguais
+        self.fragmento_mask = self.get_fragmento_mask()
+        self.fragmento_mask = pygame.mask.from_surface(self.paredes[0].fragmentos[0].img)
 
         self.pausado = False
 
@@ -162,26 +145,41 @@ class Jogo:
         self.max_pontuacao = 0
         self.salvo = False
 
-        self.nave_mask = self.nave.getMask()
         self.font = pygame.font.Font(size=80)
         self.font2 = pygame.font.Font(size=120)
 
+    def get_fragmento_mask(self):
+        return self.paredes.fragmentos[0].getMask()
 
-    def criar_interfaces(self):
+    def criar_paredes(self, screen: pygame.Surface) -> list[Parede]:
+        largura_tela = screen.get_width()
+        largura_parede = largura_tela / 10
+        largura_parede = 80 if largura_parede > 80 else largura_parede
+        x = largura_tela * 0.95
+        x_aumento = largura_tela / 4
+        img = carregar_imagem('imagens', 'obstaculo.jpg', size=(largura_parede,'auto'))
+        paredes = []
+        for i in range(4):
+            paredes.append(Parede(screen, img, x))
+            x += x_aumento
+        return paredes
+
+
+    def criar_popup(self):
         largura = self.screen.get_width() * 0.4
         altura = self.screen.get_height() * 0.7
         size_interfaces = (largura, altura)
-        interface = self.Criar.PopUp(self.screen, size_interfaces, CINZA_TRANSPARENTE)
-        return interface, interface
+        interface = PopUp(self.screen, size_interfaces, CINZA_TRANSPARENTE)
+        return interface
 
-    def criar_titulo_game_over(self):
-        return Titulo(self.interface_game_over.interface, 'center', 50, 'Game Over', VERMELHO, 100)
+    def criar_titulo_game_over(self) -> None:
+        self.titulo_game_over = Titulo(self.interface_game_over.interface, 'center', 50, 'Game Over', VERMELHO, 100)
 
     def criar_botoes_game_over(self):
-        y = self.altura_tela * 0.6
+        y = self.screen.get_height() * 0.6
         botao_restart = Botao(self.screen, Jogo, ('center', y), (self.interface_game_over.size[0]/2, 60), 'Restart', 40)
         botao_sair = Botao(self.screen, MenuPrincipal, ('center', y + botao_restart.size[1]+20), (self.interface_game_over.size[0]/2, 60), 'Menu', 40)
-        return botao_restart, botao_sair
+        self.botoes_game_over = (botao_restart, botao_sair)
     
     def exibir_txt_pontuacoes(self):
         txt_pontuacao = self.font2.render(str(self.pontuacao), True, (0,255,255))
@@ -197,7 +195,7 @@ class Jogo:
     def run(self):
 
         self.nave.exibir()
-        for parede in self.paredes:
+        for parede in self.criar_paredes:
             parede.exibir()
 
         if self.pausado:
@@ -222,7 +220,7 @@ class Jogo:
             
         else:
             self.nave.atualizarPosicao()
-            for parede in self.paredes:
+            for parede in self.criar_paredes:
                 parede.atualizarPosicao()
             self.atualizarPontuacao()
 
@@ -254,7 +252,7 @@ class Jogo:
     def colidiu(self):
         nave_x, nave_y = self.nave.x, self.nave.y
 
-        for parede in self.paredes:
+        for parede in self.criar_paredes:
             
             for img_parede in parede.all_paredes:
                 x_img, y_img = parede.x, img_parede.y
@@ -264,7 +262,7 @@ class Jogo:
         return False
     
     def atualizarPontuacao(self):
-        for parede in self.paredes:
+        for parede in self.criar_paredes:
             if self.nave.x > parede.x and not parede.pontuou:
                 self.pontuacao += 1
                 parede.pontuou = True

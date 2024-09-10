@@ -70,28 +70,28 @@ class Nave:
     def get_rect(self):
         return self.img_nave.get_rect(topleft=(self.x, self.y))
 
+class Fragmento:
+
+    def __init__(self, screen: pygame.Surface, img: pygame.Surface, y: int):
+        self.screen = screen
+        self.img = img
+        self.y = y
+        
+        self.velocidade = 3
+
+        self.largura = self.img.get_width()
+        self.largura_tela = self.screen.get_width()
+
+    def exibir(self, x):
+        self.screen.blit(self.img, (x, self.y))
+
+    def getMask(self):
+        return pygame.mask.from_surface(self.img)
+
 class Parede:
 
     PAREDE_CIMA = 1
     PAREDE_BAIXO = 0
-
-    class Imagem:
-
-        def __init__(self, screen: pygame.Surface, img: pygame.Surface, y: int):
-            self.screen = screen
-            self.img = img
-            self.y = y
-            
-            self.velocidade = 3
-
-            self.largura = self.img.get_width()
-            self.largura_tela = self.screen.get_width()
-
-        def exibir(self, x):
-            self.screen.blit(self.img, (x, self.y))
-
-        def getMask(self):
-            return pygame.mask.from_surface(self.img)
 
     def __init__(self,
                  screen: pygame.Surface,
@@ -102,41 +102,41 @@ class Parede:
         self.img = img
         self.x = x
 
-        self.largura_tela, self.altura_tela = self.screen.get_size()
-        self.largura, self.altura = self.img.get_size()
         self.velocidade = 3
-        self.espaco = self.altura_tela // 3
+        self.espaco = self.screen.get_height() // 3
         self.y = self.randomY(self.PAREDE_BAIXO)
 
-        self.all_paredes = self.criarParedes()
+        self.fragmentos = self.criarParedes()
         self.pontuou = False
 
-
     def exibir(self):
-        for img in self.all_paredes:
+        for img in self.fragmentos:
             img.exibir(self.x)
 
     def atualizarPosicao(self):
         self.x -= self.velocidade
-        if self.x  < -self.largura:
-            self.x = self.largura_tela
+        if self.x  < -self.img.get_width():
+            self.x = self.screen.get_width()
             self.pontuou = False
 
-    def criarParedes(self):
+
+    def criarParedes(self) -> list[Fragmento]:
+        '''Retorna os fragmentos das paredes'''
         y = self.y
-        paredes = []
-        while y < self.altura_tela:
-            parede = self.Imagem(self.screen, self.img, y)
-            paredes.append(parede)
-            y += self.altura
+        altura_tela = self.screen.get_height()
+        altura_img = self.img.get_height()
+        fragmentos = []
+        while y < altura_tela:
+            parede = Fragmento(self.screen, self.img, y)
+            fragmentos.append(parede)
+            y -= altura_img
         
         y = self.y - self.espaco - self.altura
-        while y > -self.altura:
-            parede = self.Imagem(self.screen, self.img, y)
-            paredes.append(parede)
-            y -= self.altura
-        
-        return paredes
+        while y > -altura_img:
+            parede = Fragmento(self.screen, self.img, y)
+            fragmentos.append(parede)
+            y -= altura_img
+        return fragmentos
 
     def randomY(self, parede):
         if parede == self.PAREDE_CIMA:
@@ -149,6 +149,6 @@ class Parede:
         return self.img.get_rect(topleft=(self.x, self.y))
     
     def getMask(self, index):
-        surface = pygame.Surface(self.all_paredes[index][0].get_size(), pygame.SRCALPHA)
+        surface = pygame.Surface(self.fragmentos[index][0].get_size(), pygame.SRCALPHA)
         surface.blit(self.img, (0,0))
         return pygame.mask.from_surface(surface)
