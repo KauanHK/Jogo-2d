@@ -48,7 +48,6 @@ class MenuPrincipal:
 
 class MenuNaves:
 
-    IMAGENS = [carregar_imagem(f'imagens' ,f'nave{i}.png', size=(100,'auto')) for i in range(1,6)]
 
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
@@ -56,6 +55,7 @@ class MenuNaves:
         self.largura_tela, self.altura_tela = self.screen.get_size()
         self.botao_voltar = Botao(self.screen, MenuPrincipal, ('center', self.screen.get_height()*0.8), (200,70), 'Voltar', 40)
         self.criar_surface_naves()
+        self.IMAGENS = [carregar_imagem(f'imagens' ,f'nave{i}.png', size=(100,'auto')) for i in range(1,6)]
 
     def criar_surface_naves(self):
         '''Exibe todas as cinco naves do menu'''
