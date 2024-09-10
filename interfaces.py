@@ -13,7 +13,6 @@ class MenuPrincipal:
 
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
-
         self.titulo = self.criar_titulo()
         self.botoes = self.criar_botoes()
 
@@ -129,30 +128,27 @@ class Jogo:
 
         self.nave = Nave(screen)
         self.paredes = self.criar_paredes()
-        self.criar_titulo_game_over()
-        self.criar_botoes_game_over()
         self.interface_pause = self.criar_popup()
         self.interface_game_over = self.criar_popup()
+        self.criar_titulo_game_over()
+        self.criar_botoes_game_over()
         self.nave_mask = self.nave.getMask()
-        
-        # Só é necessário pegar o Mask de um fragmento, pois todos os fragmentos são iguais
         self.fragmento_mask = self.get_fragmento_mask()
-        self.fragmento_mask = pygame.mask.from_surface(self.paredes[0].fragmentos[0].img)
-
-        self.pausado = False
-
-        self.pontuacao = 0
-        self.max_pontuacao = 0
-        self.salvo = False
 
         self.font = pygame.font.Font(size=80)
         self.font2 = pygame.font.Font(size=120)
 
-    def get_fragmento_mask(self):
-        return self.paredes.fragmentos[0].getMask()
+        self.pausado = False
+        self.pontuacao = 0
+        self.max_pontuacao = 0
+        self.salvo = False
 
-    def criar_paredes(self, screen: pygame.Surface) -> list[Parede]:
-        largura_tela = screen.get_width()
+    def get_fragmento_mask(self):
+        '''Retorna o Mask de um fragmento'''
+        return self.paredes[0].fragmentos[0].getMask()  # Só é necessário pegar o Mask de um fragmento, pois todos os fragmentos são iguais
+
+    def criar_paredes(self) -> list[Parede]:
+        largura_tela = self.screen.get_width()
         largura_parede = largura_tela / 10
         largura_parede = 80 if largura_parede > 80 else largura_parede
         x = largura_tela * 0.95
@@ -160,16 +156,15 @@ class Jogo:
         img = carregar_imagem('imagens', 'obstaculo.jpg', size=(largura_parede,'auto'))
         paredes = []
         for i in range(4):
-            paredes.append(Parede(screen, img, x))
+            paredes.append(Parede(self.screen, img, x))
             x += x_aumento
         return paredes
 
-
-    def criar_popup(self):
+    def criar_popup(self) -> PopUp:
         largura = self.screen.get_width() * 0.4
         altura = self.screen.get_height() * 0.7
-        size_interfaces = (largura, altura)
-        interface = PopUp(self.screen, size_interfaces, CINZA_TRANSPARENTE)
+        size = (largura, altura)
+        interface = PopUp(self.screen, size, CINZA_TRANSPARENTE)
         return interface
 
     def criar_titulo_game_over(self) -> None:
@@ -193,9 +188,9 @@ class Jogo:
         self.interface_game_over.blit(txt_recorde_pontuacao, (x,y+txt_pontuacao.get_height()+20))
 
     def run(self):
-
+        '''Executa um frame do jogo'''
         self.nave.exibir()
-        for parede in self.criar_paredes:
+        for parede in self.paredes:
             parede.exibir()
 
         if self.pausado:
@@ -220,12 +215,12 @@ class Jogo:
             
         else:
             self.nave.atualizarPosicao()
-            for parede in self.criar_paredes:
+            for parede in self.paredes:
                 parede.atualizarPosicao()
             self.atualizarPontuacao()
 
         txt_pontuacao = self.font.render(str(self.pontuacao), True, (255,255,255))
-        x = (self.largura_tela - txt_pontuacao.get_width()) / 2
+        x = (self.screen.get_width() - txt_pontuacao.get_width()) / 2
         y = 100
         self.screen.blit(txt_pontuacao, (x,y))
 
@@ -252,17 +247,17 @@ class Jogo:
     def colidiu(self):
         nave_x, nave_y = self.nave.x, self.nave.y
 
-        for parede in self.criar_paredes:
+        for parede in self.paredes:
             
-            for img_parede in parede.all_paredes:
-                x_img, y_img = parede.x, img_parede.y
+            for fragmento in parede.fragmentos:
+                x_img, y_img = parede.x, fragmento.y
                 parede_offset = (x_img - nave_x, y_img - nave_y)
-                if self.nave_mask.overlap(self.img_mask, parede_offset):
+                if self.nave_mask.overlap(self.fragmento_mask, parede_offset):
                     return True
         return False
     
     def atualizarPontuacao(self):
-        for parede in self.criar_paredes:
+        for parede in self.paredes:
             if self.nave.x > parede.x and not parede.pontuou:
                 self.pontuacao += 1
                 parede.pontuou = True

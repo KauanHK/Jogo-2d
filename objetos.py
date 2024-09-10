@@ -76,6 +76,7 @@ class Fragmento:
         self.screen = screen
         self.img = img
         self.y = y
+        self.mask = self.getMask()
         
         self.velocidade = 3
 
@@ -129,9 +130,9 @@ class Parede:
         while y < altura_tela:
             parede = Fragmento(self.screen, self.img, y)
             fragmentos.append(parede)
-            y -= altura_img
+            y += altura_img
         
-        y = self.y - self.espaco - self.altura
+        y = self.y - self.espaco - altura_img
         while y > -altura_img:
             parede = Fragmento(self.screen, self.img, y)
             fragmentos.append(parede)
@@ -143,7 +144,7 @@ class Parede:
             return random.choice([i for i in range(- self.altura, 0)])
         
         elif parede == self.PAREDE_BAIXO:
-            return random.choice([i for i in range(self.espaco, self.altura_tela)])
+            return random.choice([i for i in range(self.espaco, self.screen.get_height())])
     
     def get_rect(self):
         return self.img.get_rect(topleft=(self.x, self.y))

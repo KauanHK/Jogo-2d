@@ -10,7 +10,7 @@ def calcular_size(imagem: pygame.Surface, size: tuple[int,int]):
     if largura == 'auto':
         largura = altura * largura_original / altura_original
     elif altura == 'auto':
-        altura = largura / largura_original / altura_original
+        altura = largura * altura_original / largura_original
     return largura, altura
 
 

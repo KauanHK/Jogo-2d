@@ -15,19 +15,21 @@ class Manager:
         '''
         self.interface = interface
 
-    def _setup(self):
+    def _setup(self) -> None:
         '''Cria os princiapis atributos para executar o jogo'''
 
         pygame.init()
         pygame.display.set_caption('Jogo da Nave')
 
-        self.screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
+        # self.screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
+        self.screen = pygame.display.set_mode((500,400))
+
         self.interface = self.interface(self.screen)
         self.FUNDO = carregar_imagem('imagens', 'fundo.jpg', size=self.screen.get_size())
         self.clock = pygame.time.Clock()
         self.fps = 60
 
-    def run(self):
+    def run(self) -> None:
         '''Executa o jogo'''
         
         self._setup()
@@ -42,10 +44,12 @@ class Manager:
             pygame.display.flip()
             self.clock.tick(self.fps)
         
+        print('\nObrigado por jogar meu jogo :)')
+        print('Desenvolvido por Kauan Henrique Kaestner')
         pygame.quit()
     
 
-    def loadEvent(self, event):
+    def loadEvent(self, event) -> None:
         '''Gerencia um pygame.Event. 
         Pode atualizar o valor de self.rodando para finalizar o jogo, 
         alternar o valor de self.interface, 
@@ -53,6 +57,7 @@ class Manager:
         if event.type == pygame.QUIT:
             self.rodando = False
             return
+        
         interface = self.interface.loadEvent(event)
         if interface is not None:
             if interface == 'sair':
