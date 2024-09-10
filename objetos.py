@@ -14,14 +14,22 @@ class Nave:
                  ):
         
         self.screen = screen
-        self.img = carregar_imagem('imagens', f'nave{Nave.selecionada}.png', size=(self.screen.get_width()*0.05, 'auto'))
+        self.nave = Nave.selecionada
+        self.img = carregar_imagem('imagens', f'nave{self.nave}.png', size=(self.screen.get_width()*0.05, 'auto'))
 
         rect_img = self.img.get_rect()
         rect_img.center = self.screen.get_rect().center
+        self.img_fogo = carregar_imagem('imagens', f'fogo{self.nave}.png', size = self.img.get_width())
         self.x = rect_img.left
         self.y = self.screen.get_rect().centery
+        self.y_fogo = self.definir_y_fogo()
         self.velocidade = 3
-    
+
+    def definir_y_fogo(self):
+        altura_img = self.img.get_height()
+        y_fogo = [self.y + altura_img, self.y + (3/4) * altura_img, self.y + altura_img, self.y + altura_img/10*9,self.y + altura_img]
+        return y_fogo[self.nave - 1]
+
     def atualizarPosicao(self):
         self.y += self.velocidade
 
@@ -33,6 +41,10 @@ class Nave:
         
     def exibir(self):
         self.screen.blit(self.img, (self.x, self.y))
+        self.soltar_fogo()
+
+    def soltar_fogo(self):
+        self.screen.blit(self.fogo,(self.x, self.y + self.y_fogo))
 
     def getMask(self):
         return pygame.mask.from_surface(self.img)

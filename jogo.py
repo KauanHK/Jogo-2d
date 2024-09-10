@@ -17,6 +17,7 @@ class Manager:
 
     def _setup(self):
         '''Cria os princiapis atributos para executar o jogo'''
+
         pygame.init()
         pygame.display.set_caption('Jogo da Nave')
 
