@@ -2,7 +2,7 @@ import pygame
 from typing import Literal, Union
 from objetos import Nave, Parede
 from pontuacao import carregar_pontuacao, salvar_pontuacao
-from imagens import carregar_imagem
+from imagens import carregar_imagem, mudar_tamanho
 from titulo import Titulo
 from botao import Botao
 from cores import *
@@ -48,67 +48,109 @@ class MenuPrincipal:
 
 class MenuNaves:
 
-
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
         self.nave_selecionada = Nave.selecionada
-        self.criar_botao_voltar()
-        self.carregar_imagens()
-        self.criar_surface_naves()
+        self.botao_voltar = self.criar_botao_voltar()
+        self.IMAGENS = self.carregar_imagens()
+        self.surface_naves = self.criar_surface_naves()
+        self.coord_surface_naves = self.calcular_coord_surf_naves()
+        self.atualizar_surface_naves()
+        self.img_rects = self.criar_imgs_rects()
 
-    def criar_botao_voltar(self) -> None:
-        self.botao_voltar = Botao(self.screen, MenuPrincipal, ('center', self.screen.get_height()*0.8), (200,70), 'Voltar', 40)
 
-    def carregar_imagens(self) -> None:
-        self.IMAGENS = [carregar_imagem(f'imagens' ,f'nave{i}.png', size=(100,'auto')) for i in range(1,6)]
+    def criar_botao_voltar(self) -> Botao:
+        return Botao(self.screen, MenuPrincipal, ('center', self.screen.get_height()*0.8), (200,70), 'Voltar', 40)
 
-    def _criar_surface_naves(self) -> None:
-        '''Método interno para criar o Surface onde ficarão os surface das naves'''
-
-        # Criar a superfície onde ficarão todas as 5 naves
-        size = (self.screen.get_width() * 0.8, 150)
-        self.surface_naves = pygame.Surface(size, pygame.SRCALPHA)
-        self.x_surface = self.surface_naves.get_rect(center = self.screen.get_rect().center).left
-        self.y_surface = self.altura_tela * 0.5
-
-    def criar_surface_nave(self, img: pygame.Surface,  nave_i: int) -> pygame.Surface:
-        '''Cria um Surface onde ficará a imagem da nave. O fundo é cinza transparente caso a nave esteja selecionada'''
-        surface_fundo_nave = pygame.Surface((150, 150), pygame.SRCALPHA)
-        if nave_i == self.nave_selecionada:
-            surface_fundo_nave.fill(CINZA_TRANSPARENTE)
-        coord = img.get_rect(center = surface_fundo_nave.get_rect().center).topleft
-        surface_fundo_nave.blit(img, coord)
-        return surface_fundo_nave
-
-    def criar_imgs_rects(self, img: pygame.Surface, x: int, y: int) -> None:
-        '''Cria a lista self.img_rects, que armazena os Rect's de todas as imagens das naves.'''
-        self.img_rects = []
-        for i, img in enumerate(self.IMAGENS):
-            x = self.x_surface + (self.surface_naves.get_width() / 5 * i) + 25
-            y = self.y_surface + 25
-            rect = img.get_rect(topleft = (x,y), height = img.get_height()+25)
-            self.img_rects.append(rect)
-
-    def criar_surface_naves(self) -> None:
+    def carregar_imagens(self) -> list[pygame.Surface]:
+        return [carregar_imagem(f'imagens' ,f'nave{i}.png', size=(100,'auto')) for i in range(1,6)]
+    
+    def criar_surface_naves(self) -> pygame.Surface:
         '''Cria a superfície onde aparecem todas as naves do jogo no menu'''
-        self._criar_surface_naves()
-        for i, img in enumerate(self.IMAGENS):
-            # Isso cria o Surface da nave, com um fundo cinza transparente se for a nave selecionada
-            surface_fundo_nave = self.criar_surface_nave(img, i+1)
+        size = (self.screen.get_width() * 0.8, 150)
+        return pygame.Surface(size, pygame.SRCALPHA)
 
-            # Adicionar o Surface da nave ao Surface das naves
-            x = self.surface_naves.get_width() / 5 * i
-            self.surface_naves.blit(surface_fundo_nave, (x, 0))
-        
+    def atualizar_surface_naves(self):
+        self.surface_naves = self.criar_surface_naves()
+        self.fundos = self.criar_fundos_naves()
+        self.lefts_fundos = self.calcular_x_fundos()
+        self.inserir_imgs_naves_nos_fundos()
+        self.inserir_fundos()
+
+    def calcular_coord_surf_naves(self) -> tuple[int]:
+        x = self.surface_naves.get_rect(center = self.screen.get_rect().center).left
+        y = self.screen.get_height() * 0.5
+        return x,y
+    
+    def criar_fundos_naves(self) -> list[pygame.Surface]:
+        '''Retorna uma lista de Surface's que correspondem ao fundo das imagens das naves.
+        Um fundo é cinza transparente, correspondente à nave que está selecionada.'''
+        fundos = []
+        for i in range(len(self.IMAGENS)):
+            fundo = pygame.Surface((150,150), pygame.SRCALPHA)
+            if self.nave_selecionada == i+1:
+                fundo.fill(CINZA_TRANSPARENTE)
+            fundos.append(fundo)
+        return fundos
+    
+    def calcular_x_fundos(self) -> list[int]:
+        coords = []
+        largura_surface = self.surface_naves.get_width()
+        num_imgs = len(self.IMAGENS)
+        x_aumento = largura_surface / (num_imgs - 1)
+        for i, fundo in enumerate(self.fundos):
+            x = x_aumento * i - fundo.get_width() / 2
+            if x < 0:
+                x = 0
+            elif x + fundo.get_width() > largura_surface:
+                x = largura_surface - fundo.get_width()
+            coords.append(x)
+        return coords
+
+    def hover_naves(self, fundos: list[pygame.Surface]):
+        y = self.coord_surface_naves[1]
+        mouse_pos = pygame.mouse.get_pos()
+        imgs = []
+        for x, img_nave in zip(self.lefts_fundos, fundos):
+            if img_nave.get_rect(topleft = (x, y)).collidepoint(mouse_pos):
+                size = img_nave.get_size()
+                if size[0] < self.IMAGENS[0].get_width() * 1.5:
+                    size = (s * 1.05 for s in size)
+                img_nave = mudar_tamanho(img_nave, size)
+            imgs.append(img_nave)
+        return imgs
+
+    def inserir_imgs_naves_nos_fundos(self) -> None:
+        '''Insere as imagens das naves nos seus fundos. Retorna None'''
+        imgs_naves = self.hover_naves(self.IMAGENS)
+        for fundo, img_nave in zip(self.fundos, imgs_naves):
+            x,y = img_nave.get_rect(center = fundo.get_rect().center).topleft
+            fundo.blit(img_nave, (x,y))
+    
+    def criar_imgs_rects(self) -> list[pygame.Rect]:
+        '''Cria a lista self.img_rects, que armazena os Rect's de todas as imagens das naves. 
+        Depende do Surface self.coord_surface_naves, que deve ser criado antes de executar este método.'''
+        y = self.coord_surface_naves[1]
+        rects = []
+        for fundo, left in zip(self.fundos, self.lefts_fundos):
+            x = self.coord_surface_naves[0] + left
+            rect = fundo.get_rect(topleft = (x, y))
+            rects.append(rect)
+        return rects
+
+    def inserir_fundos(self):
+        for x, fundo in zip(self.lefts_fundos, self.fundos):
+            self.surface_naves.blit(fundo, (x,0))
+            
 
     def exibir_naves(self) -> None:
-        self.screen.blit(self.surface_naves, (self.x_surface, self.y_surface))
+        self.screen.blit(self.surface_naves, self.coord_surface_naves)
 
     def run(self) -> None:
         self.botao_voltar.exibir()
         if self.nave_selecionada != Nave.selecionada:
             self.nave_selecionada = Nave.selecionada
-            self.criar_surface_naves()
+            self.atualizar_surface_naves()
         self.exibir_naves()
     
     
@@ -120,6 +162,7 @@ class MenuNaves:
             for i, nave_rect in enumerate(self.img_rects):
                 if nave_rect.collidepoint(event.pos):
                     Nave.selecionada = i+1
+                    break
 
 class Jogo:
 
@@ -130,8 +173,8 @@ class Jogo:
         self.paredes = self.criar_paredes()
         self.interface_pause = self.criar_popup()
         self.interface_game_over = self.criar_popup()
-        self.criar_titulo_game_over()
-        self.criar_botoes_game_over()
+        self.titulo_game_over = self.criar_titulo_game_over()
+        self.botoes_game_over = self.criar_botoes_game_over()
         self.nave_mask = self.nave.getMask()
         self.fragmento_mask = self.get_fragmento_mask()
 
@@ -143,7 +186,7 @@ class Jogo:
         self.max_pontuacao = 0
         self.salvo = False
 
-    def get_fragmento_mask(self):
+    def get_fragmento_mask(self) -> pygame.Mask:
         '''Retorna o Mask de um fragmento'''
         return self.paredes[0].fragmentos[0].getMask()  # Só é necessário pegar o Mask de um fragmento, pois todos os fragmentos são iguais
 
@@ -167,16 +210,16 @@ class Jogo:
         interface = PopUp(self.screen, size, CINZA_TRANSPARENTE)
         return interface
 
-    def criar_titulo_game_over(self) -> None:
-        self.titulo_game_over = Titulo(self.interface_game_over.interface, 'center', 50, 'Game Over', VERMELHO, 100)
+    def criar_titulo_game_over(self) -> Titulo:
+        return Titulo(self.interface_game_over.interface, 'center', 50, 'Game Over', VERMELHO, 100)
 
-    def criar_botoes_game_over(self):
+    def criar_botoes_game_over(self) -> list[Botao]:
         y = self.screen.get_height() * 0.6
         botao_restart = Botao(self.screen, Jogo, ('center', y), (self.interface_game_over.size[0]/2, 60), 'Restart', 40)
         botao_sair = Botao(self.screen, MenuPrincipal, ('center', y + botao_restart.size[1]+20), (self.interface_game_over.size[0]/2, 60), 'Menu', 40)
-        self.botoes_game_over = (botao_restart, botao_sair)
+        return botao_restart, botao_sair
     
-    def exibir_txt_pontuacoes(self):
+    def exibir_txt_pontuacoes(self) -> None:
         txt_pontuacao = self.font2.render(str(self.pontuacao), True, (0,255,255))
         txt_recorde_pontuacao = self.font.render(f'Recorde: {self.max_pontuacao}', True, (255,255,255))
 
@@ -187,7 +230,7 @@ class Jogo:
         x = txt_recorde_pontuacao.get_rect(center=self.interface_game_over.interface.get_rect().center).left
         self.interface_game_over.blit(txt_recorde_pontuacao, (x,y+txt_pontuacao.get_height()+20))
 
-    def run(self):
+    def run(self) -> None:
         '''Executa um frame do jogo'''
         self.nave.exibir()
         for parede in self.paredes:
@@ -244,7 +287,7 @@ class Jogo:
                     return botao.event
             
     
-    def colidiu(self):
+    def colidiu(self) -> bool:
         nave_x, nave_y = self.nave.x, self.nave.y
 
         for parede in self.paredes:
@@ -256,7 +299,7 @@ class Jogo:
                     return True
         return False
     
-    def atualizarPontuacao(self):
+    def atualizarPontuacao(self) -> None:
         for parede in self.paredes:
             if self.nave.x > parede.x and not parede.pontuou:
                 self.pontuacao += 1
