@@ -35,7 +35,7 @@ class Parede:
         self.x = x
 
         self.velocidade = 3
-        self.espaco = self.screen.get_height() // 3
+        self.espaco = round(self.screen.get_height() / 3)
         self.y = self.randomY(self.PAREDE_BAIXO)
 
         self.fragmentos = self.criarParedes()
@@ -57,6 +57,7 @@ class Parede:
         y = self.y
         altura_tela = self.screen.get_height()
         altura_img = self.img.get_height()
+
         fragmentos = []
         while y < altura_tela:
             parede = Fragmento(self.screen, self.img, y)
@@ -68,6 +69,7 @@ class Parede:
             parede = Fragmento(self.screen, self.img, y)
             fragmentos.append(parede)
             y -= altura_img
+
         return fragmentos
 
     def randomY(self, parede):

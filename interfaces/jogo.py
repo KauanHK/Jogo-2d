@@ -1,9 +1,7 @@
 import pygame
 from components.nave import Nave
 from pontuacao import carregar_pontuacao, salvar_pontuacao
-from utils.imagens import carregar_imagem
-from interfaces.ui_jogo import Interface
-from components.parede import Parede
+from interfaces.ui_jogo import Interface, Paredes
 
 
 class Jogo:
@@ -12,7 +10,7 @@ class Jogo:
         self.screen = screen
 
         self.nave = Nave(screen)
-        self.paredes = self.criar_paredes()
+        self.paredes = Paredes(self.screen)
         self.interface = Interface(self.screen)
         self.nave_mask = self.nave.getMask()
         self.fragmento_mask = self.get_fragmento_mask()
@@ -25,18 +23,6 @@ class Jogo:
         self.max_pontuacao = 0
         self.salvo = False
 
-    def criar_paredes(self) -> list[Parede]:
-        largura_tela = self.screen.get_width()
-        largura_parede = largura_tela / 10
-        largura_parede = 80 if largura_parede > 80 else largura_parede
-        x = largura_tela * 0.95
-        x_aumento = largura_tela / 4
-        img = carregar_imagem('imagens', 'obstaculo.jpg', size=(largura_parede,'auto'))
-        paredes = []
-        for i in range(4):
-            paredes.append(Parede(self.screen, img, x))
-            x += x_aumento
-        return paredes
 
     def get_fragmento_mask(self) -> pygame.Mask:
         '''Retorna o Mask de um fragmento'''
@@ -46,7 +32,7 @@ class Jogo:
         txt_pontuacao = self.font2.render(str(self.pontuacao), True, (0,255,255))
         txt_recorde_pontuacao = self.font.render(f'Recorde: {self.max_pontuacao}', True, (255,255,255))
 
-        x = txt_pontuacao.get_rect(center = self.interface_game_over.interface.get_rect().center).left
+        x = txt_pontuacao.get_rect(center = self.interface.game_over.interface.get_rect().center).left
         y = self.titulo_game_over.coord[1] + self.titulo_game_over.titulo.get_height() + 20
         self.interface_game_over.blit(txt_pontuacao, (x,y))
 
@@ -56,6 +42,7 @@ class Jogo:
     def exibir_naves(self):
         self.nave.exibir()
         for parede in self.paredes:
+            print(parede)
             parede.exibir()
 
     def salvar_pontuacao(self):
@@ -106,9 +93,9 @@ class Jogo:
                 self.pausado = not self.pausado
         
         if self.colidiu():
-            for botao in self.botoes_game_over:
+            for botao in self.interface.botoes_game_over:
                 if botao.clicked(event):
-                    return botao.event
+                    return botao.get_event()
             
     
     def colidiu(self) -> bool:
