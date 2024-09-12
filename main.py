@@ -3,10 +3,16 @@ from utils.imagens import carregar_imagem
 from interfaces.jogo import Jogo
 from interfaces.menu_principal import MenuPrincipal
 from interfaces.menu_naves import MenuNaves
-from typing import Union
+from typing import Union, Literal
 
 class Manager:
 
+    INTERFACES = {
+        "Jogo": Jogo,
+        "MenuPrincipal": MenuPrincipal,
+        "MenuNaves": MenuNaves,
+        "sair": "sair"
+    }
 
     def __init__(self, interface: Union[Jogo, MenuPrincipal, MenuNaves] = MenuPrincipal):
         '''
@@ -35,8 +41,7 @@ class Manager:
         '''Executa o jogo'''
         
         self._setup()
-        self.rodando = True
-        while self.rodando:
+        while self.interface != "sair":
             for event in pygame.event.get():
                 self.loadEvent(event)
 
@@ -57,15 +62,14 @@ class Manager:
         alternar o valor de self.interface, 
         ou não fazer nada, dependendo do evento.'''
         if event.type == pygame.QUIT:
-            self.rodando = False
-            return
-        
-        interface = self.interface.loadEvent(event)
-        if interface is not None:
-            if interface == 'sair':
-                self.rodando = False
-                return
-            self.interface = interface(self.screen)
+            self.interface = 'sair'
+        else:
+            interface = self.interface.loadEvent(event)
+            if interface is not None:
+                self.interface = self.nova_interface(interface)
+
+    def nova_interface(self, interface: Literal["Jogo", "MenuPrincipal", "MenuNaves", "Sair"]):
+        return self.INTERFACES[interface](self.screen)
 
 if __name__ == '__main__':
     manager = Manager()

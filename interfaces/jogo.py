@@ -1,13 +1,10 @@
 import pygame
 from components.nave import Nave
-from components.parede import Parede
-from utils.imagens import carregar_imagem
-from utils.cores import *
-from components.popup import PopUp
-from components.titulo import Titulo
-from components.botao import Botao
-from utils.types import InterfaceType
 from pontuacao import carregar_pontuacao, salvar_pontuacao
+from utils.imagens import carregar_imagem
+from interfaces.ui_jogo import Interface
+from components.parede import Parede
+
 
 class Jogo:
 
@@ -16,10 +13,7 @@ class Jogo:
 
         self.nave = Nave(screen)
         self.paredes = self.criar_paredes()
-        self.interface_pause = self.criar_popup()
-        self.interface_game_over = self.criar_popup()
-        self.titulo_game_over = self.criar_titulo_game_over()
-        self.botoes_game_over = self.criar_botoes_game_over()
+        self.interface = Interface(self.screen)
         self.nave_mask = self.nave.getMask()
         self.fragmento_mask = self.get_fragmento_mask()
 
@@ -30,10 +24,6 @@ class Jogo:
         self.pontuacao = 0
         self.max_pontuacao = 0
         self.salvo = False
-
-    def get_fragmento_mask(self) -> pygame.Mask:
-        '''Retorna o Mask de um fragmento'''
-        return self.paredes[0].fragmentos[0].getMask()  # Só é necessário pegar o Mask de um fragmento, pois todos os fragmentos são iguais
 
     def criar_paredes(self) -> list[Parede]:
         largura_tela = self.screen.get_width()
@@ -48,22 +38,10 @@ class Jogo:
             x += x_aumento
         return paredes
 
-    def criar_popup(self) -> PopUp:
-        largura = self.screen.get_width() * 0.4
-        altura = self.screen.get_height() * 0.7
-        size = (largura, altura)
-        interface = PopUp(self.screen, size, CINZA_TRANSPARENTE)
-        return interface
+    def get_fragmento_mask(self) -> pygame.Mask:
+        '''Retorna o Mask de um fragmento'''
+        return self.paredes[0].fragmentos[0].getMask()  # Só é necessário pegar o Mask de um fragmento, pois todos os fragmentos são iguais
 
-    def criar_titulo_game_over(self) -> Titulo:
-        return Titulo(self.interface_game_over.interface, 'center', 50, 'Game Over', VERMELHO, 100)
-
-    def criar_botoes_game_over(self) -> list[Botao]:
-        y = self.screen.get_height() * 0.6
-        botao_restart = Botao(self.screen, Jogo, ('center', y), (self.interface_game_over.size[0]/2, 60), 'Restart', 40)
-        botao_sair = Botao(self.screen, MenuPrincipal, ('center', y + botao_restart.size[1]+20), (self.interface_game_over.size[0]/2, 60), 'Menu', 40)
-        return botao_restart, botao_sair
-    
     def exibir_txt_pontuacoes(self) -> None:
         txt_pontuacao = self.font2.render(str(self.pontuacao), True, (0,255,255))
         txt_recorde_pontuacao = self.font.render(f'Recorde: {self.max_pontuacao}', True, (255,255,255))
@@ -75,31 +53,32 @@ class Jogo:
         x = txt_recorde_pontuacao.get_rect(center=self.interface_game_over.interface.get_rect().center).left
         self.interface_game_over.blit(txt_recorde_pontuacao, (x,y+txt_pontuacao.get_height()+20))
 
-    def run(self) -> None:
-        '''Executa um frame do jogo'''
+    def exibir_naves(self):
         self.nave.exibir()
         for parede in self.paredes:
             parede.exibir()
 
+    def salvar_pontuacao(self):
+        pontuacoes = carregar_pontuacao()
+        pontuacoes.append(self.pontuacao)
+        salvar_pontuacao(pontuacoes)
+        self.salvo = True
+        self.max_pontuacao = max(pontuacoes)
+
+    def run(self) -> None:
+        '''Executa um frame do jogo'''
+        self.exibir_naves()
+
         if self.pausado:
-            self.interface_pause.exibir()
+            self.interface.pause.exibir()
         
         elif self.colidiu():
-            
+            self.interface.game_over.exibir()
             if not self.salvo:
-                pontuacoes = carregar_pontuacao()
-                pontuacoes.append(self.pontuacao)
-                salvar_pontuacao(pontuacoes)
-                self.salvo = True
-                self.max_pontuacao = max(pontuacoes)
+                self.salvar_pontuacao()
 
             self.exibir_txt_pontuacoes()
-            self.titulo_game_over.exibir()
-            
-            self.interface_game_over.exibir()
-            for botao in self.botoes_game_over:
-                botao.exibir()
-            
+            self.interface.titulo_game_over.exibir()
             
         else:
             self.nave.atualizarPosicao()
@@ -112,8 +91,8 @@ class Jogo:
         y = 100
         self.screen.blit(txt_pontuacao, (x,y))
 
-    def loadEvent(self, event: pygame.event.Event) -> MenuPrincipal | MenuNaves | None:
-        for botao in self.botoes_game_over:
+    def loadEvent(self, event: pygame.event.Event):
+        for botao in self.interface.botoes_game_over:
             botao.hover()
         if event.type == pygame.KEYDOWN:
             if not self.pausado:

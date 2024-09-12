@@ -1,10 +1,11 @@
 import pygame
+from typing import Literal
 
 class Botao:
 
     def __init__(self,
                  screen: pygame.Surface,
-                 event: object,
+                 event: Literal["Jogo", "MenuPrincipal", "MenuNaves"] | None,
                  coord: tuple[int, int],
                  size: tuple[int, int],
                  text: str,
@@ -70,3 +71,6 @@ class Botao:
         self.color = self.back_color
         self.atualizarBotao()
         return False
+
+    def get_event(self):
+        return self.event

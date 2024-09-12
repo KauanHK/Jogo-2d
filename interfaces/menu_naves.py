@@ -19,7 +19,7 @@ class MenuNaves:
 
 
     def criar_botao_voltar(self) -> Botao:
-        return Botao(self.screen, MenuPrincipal, ('center', self.screen.get_height()*0.8), (200,70), 'Voltar', 40)
+        return Botao(self.screen, "MenuPrincipal", ('center', self.screen.get_height()*0.8), (200,70), 'Voltar', 40)
 
     def carregar_imagens(self) -> list[pygame.Surface]:
         return [carregar_imagem(f'imagens' ,f'nave{i}.png', size=(100,'auto')) for i in range(1,6)]
@@ -116,7 +116,7 @@ class MenuNaves:
     def loadEvent(self, event: pygame.event.Event) -> MenuPrincipal | None:
         self.botao_voltar.hover()
         if self.botao_voltar.clicked(event):
-            return self.botao_voltar.event
+            return self.botao_voltar.get_event()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             for i, nave_rect in enumerate(self.img_rects):
                 if nave_rect.collidepoint(event.pos):
