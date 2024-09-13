@@ -19,7 +19,7 @@ class MenuNaves:
 
 
     def criar_botao_voltar(self) -> Botao:
-        return Botao(self.screen, "MenuPrincipal", ('center', self.screen.get_height()*0.8), (200,70), 'Voltar', 40)
+        return Botao(self.screen.get_size(), "MenuPrincipal", ('center', self.screen.get_height()*0.8), (200,70), 'Voltar', 40)
 
     def carregar_imagens(self) -> list[pygame.Surface]:
         return [carregar_imagem(f'imagens' ,f'nave{i}.png', size=(100,'auto')) for i in range(1,6)]

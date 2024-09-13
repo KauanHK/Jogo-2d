@@ -4,7 +4,7 @@ from typing import Literal
 class Botao:
 
     def __init__(self,
-                 screen: pygame.Surface,
+                 screen_size: tuple[int],
                  event: Literal["Jogo", "MenuPrincipal", "MenuNaves"] | None,
                  coord: tuple[int, int],
                  size: tuple[int, int],
@@ -13,7 +13,8 @@ class Botao:
                  back_color: tuple[int,int,int] | None = (255,255,255),
                  txt_color: tuple[int,int,int] | None = (0,0,0),
                  hover_color: tuple[int,int,int] | None = (180,180,180)):
-        self.screen = screen
+        
+        self.screen_size = screen_size
         self.event = event
         if coord is not None:
             if any(p == 'center' for p in coord):
@@ -44,18 +45,18 @@ class Botao:
 
         x,y = self.coord
         if x == 'center':
-            screen_centerx = self.screen.get_width() / 2
+            screen_centerx = self.screen_size[0] / 2
             x = self.surface.get_rect(centerx=screen_centerx).left
         
         if y == 'center':
-            screen_centery = self.screen.get_height() / 2
+            screen_centery = self.screen_size[1] / 2
             y = self.surface.get_rect(centery=screen_centery).top
         
         self.coord = (x,y)
         self.rect = self.surface.get_rect(topleft=self.coord)
 
-    def exibir(self):
-        self.screen.blit(self.surface, self.coord)
+    def exibir(self, screen: pygame.Surface):
+        screen.blit(self.surface, self.coord)
 
     def clicked(self, event: pygame.event.Event):
         if event.type == pygame.MOUSEBUTTONDOWN:

@@ -2,14 +2,14 @@ import pygame
 
 class Titulo:
     def __init__(self,
-                 screen: pygame.Surface,
+                 screen_size: tuple[int],
                  x: int | str,
                  y: int | str,
                  text: str,
                  color: tuple[int,int,int] | None = (255,255,255),
                  font_size: int | None = 80):
         self.titulo = None
-        self.screen = screen
+        self.screen_size = screen_size
         self.coord = (x,y)
         self.text = text
         self.color = color
@@ -20,16 +20,17 @@ class Titulo:
 
     def update(self):
         self.titulo = self.font.render(self.text, True, self.color)
+        center = (round(self.screen_size[0] / 2), round(self.screen_size[1] / 2))
         x,y = self.coord
         if x == 'center':
-            x = self.titulo.get_rect(center=self.screen.get_rect().center).left
+            x = self.titulo.get_rect(center = center).left
         if y == 'center':
-            y = self.titulo.get_rect(center=self.screen.get_rect().center).top
+            y = self.titulo.get_rect(center = center).top
         self.coord = (x,y)
 
-    def exibir(self):
+    def exibir(self, screen: pygame.Surface):
         self.update()
-        self.screen.blit(self.titulo, self.coord)
+        screen.blit(self.titulo, self.coord)
 
     def atualizarCor(self):
 
