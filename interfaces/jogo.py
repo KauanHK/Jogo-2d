@@ -40,12 +40,12 @@ class Jogo:
         txt_pontuacao = self.font2.render(str(self.pontuacao), True, (0,255,255))
         txt_recorde_pontuacao = self.font.render(f'Recorde: {self.max_pontuacao}', True, (255,255,255))
 
-        x = txt_pontuacao.get_rect(center = self.interface.game_over.interface.get_rect().center).left
-        y = self.interface.titulo_game_over.coord[1] + self.interface.titulo_game_over.titulo.get_height() + 20
-        self.interface.game_over.blit(txt_pontuacao, (x,y))
+        x = txt_pontuacao.get_rect(center = self.interface.game_over.popup.interface.get_rect().center).left
+        y = self.interface.game_over.titulo.coord[1] + self.interface.game_over.titulo.surface.get_height() + 20
+        self.interface.game_over.popup.interface.blit(txt_pontuacao, (x,y))
 
-        x = txt_recorde_pontuacao.get_rect(center=self.interface.game_over.interface.get_rect().center).left
-        self.interface.game_over.blit(txt_recorde_pontuacao, (x,y+txt_pontuacao.get_height()+20))
+        x = txt_recorde_pontuacao.get_rect(center=self.interface.game_over.popup.interface.get_rect().center).left
+        self.interface.game_over.popup.interface.blit(txt_recorde_pontuacao, (x,y+txt_pontuacao.get_height()+20))
 
 
     def salvar_pontuacao(self):
@@ -74,12 +74,19 @@ class Jogo:
             self.interface.pause.exibir(self.screen)
         
         elif self.colidiu():
+            mouse_pos = pygame.mouse.get_pos()
+            for rect, botao in zip(self.interface.game_over.botoes_rects, self.interface.game_over.botoes):
+                if rect.collidepoint(mouse_pos):
+                    botao.definir_cor_hover()
+                else:
+                    botao.definir_cor_padrao()
+
+            self.interface.game_over.atualizar_popup()
             self.interface.game_over.exibir(self.screen)
             if not self.salvo:
                 self.salvar_pontuacao()
 
             self.exibir_txt_pontuacoes()
-            self.interface.titulo_game_over.exibir()
             
         else:
             self.nave.atualizarPosicao()
@@ -90,8 +97,6 @@ class Jogo:
         
 
     def loadEvent(self, event: pygame.event.Event):
-        for botao in self.interface.botoes_game_over:
-            botao.hover()
         if event.type == pygame.KEYDOWN:
             if not self.pausado:
                 if event.key == pygame.K_UP:
@@ -104,7 +109,7 @@ class Jogo:
                 self.pausado = not self.pausado
         
         if self.colidiu():
-            for botao in self.interface.botoes_game_over:
+            for botao in self.interface.game_over.botoes:
                 if botao.clicked(event):
                     return botao.get_event()
             

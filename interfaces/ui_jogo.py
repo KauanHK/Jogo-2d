@@ -9,28 +9,10 @@ from utils.cores import *
 class Interface:
 
     def __init__(self, screen_size: tuple[int]):
-        self.screen_size = screen_size
-        self.pause = self.criar_popup()
-        popup = self.criar_popup()
-        titulo_game_over = self.criar_titulo_game_over(popup)
-        botoes_game_over = self.criar_botoes_game_over(popup)
-        self.game_over = GameOver(popup, titulo_game_over, botoes_game_over)
+        self.pause = GameOver.criar_popup(Pause, screen_size)
+        self.game_over = GameOver(screen_size)
 
-    def criar_popup(self) -> PopUp:
-        largura = self.screen_size[0] * 0.4
-        altura = self.screen_size[1] * 0.7
-        size = (largura, altura)
-        interface = PopUp(self.screen_size, size, CINZA_TRANSPARENTE)
-        return interface
 
-    def criar_titulo_game_over(self, popup: PopUp) -> Titulo:
-        return Titulo(popup.get_size(), 'center', 50, 'Game Over', VERMELHO, 100)
-
-    def criar_botoes_game_over(self, popup: PopUp) -> list[Botao]:
-        y = self.screen_size[1] * 0.6
-        botao_restart = Botao(popup.size, "Jogo", ('center', y), (popup.get_size()[0]/2, 60), 'Restart', 40)
-        botao_sair = Botao(popup.size, "MenuPrincipal", ('center', y + botao_restart.size[1]+20), (popup.size[1]/2, 60), 'Menu', 40)
-        return botao_restart, botao_sair
     
 class Paredes:
 
@@ -70,18 +52,59 @@ class Paredes:
     def __getitem__(self, index: int):
         return self.paredes[index]
 
+class Pause:
+
+    def __init__(self):
+        pass
+
 class GameOver:
 
-    def __init__(self, popup: PopUp, titulo: Titulo, botoes: list[Botao]):
-        self.popup = popup
-        self.titulo = titulo
-        self.botoes = botoes
+    def __init__(self, screen_size: tuple[int]):
+        self.popup = self.criar_popup(screen_size)
+        self.titulo = self.criar_titulo()
+        self.botoes = self.criar_botoes()
+        self.botoes_rects = self.definir_rects_botoes()
         self.atualizar_popup()
-    
-    def atualizar_popup(self):
-        self.popup.blit(self.titulo, self.titulo.coord)
-        for botao in self.botoes:
-            self.popup.blit(botao, botao.coord)
 
-    def exibir(self):
-        self.popup.exibir()
+    def criar_popup(self, screen_size: tuple[int]) -> PopUp:
+        largura = screen_size[0] * 0.4
+        altura = screen_size[1] * 0.7
+        size = (largura, altura)
+        popup = PopUp(screen_size, size, CINZA_TRANSPARENTE)
+        return popup
+    
+    def criar_titulo(self) -> Titulo:
+        return Titulo(self.popup.get_size(), 'center', 50, 'Game Over', VERMELHO, 100)
+
+    def criar_botoes(self) -> list[Botao]:
+        y = self.popup.get_size()[1] * 0.6
+        coord = ('center', y)
+        largura = self.popup.get_size()[0] / 2
+        altura = 60
+        size = (largura, altura)
+        botao_restart = Botao(self.popup.get_size(), "Jogo", coord, size, 'Restart', 40)
+
+        y += botao_restart.size[1] + 20
+        coord = ('center', y)
+        largura = self.popup.get_size()[1]/2
+        size = (largura, altura)
+        botao_sair = Botao(self.popup.get_size(), "MenuPrincipal", coord, size, 'Menu', 40)
+        return botao_restart, botao_sair
+    
+    def definir_rects_botoes(self):
+        rects = []
+        for botao in self.botoes:
+            x = self.popup.coord[0] + botao.coord[0]
+            y = self.popup.coord[1] + botao.coord[1]
+            rect = botao.get_rect(topleft = (x,y))
+            rects.append(rect)
+        return rects
+
+    def atualizar_popup(self):
+        self.popup.atualizar()
+        self.popup.blit(self.titulo.surface, self.titulo.coord)
+        for botao in self.botoes:
+            self.popup.blit(botao.surface, botao.coord)
+
+    def exibir(self, screen: pygame.Surface):
+        self.popup.exibir(screen)

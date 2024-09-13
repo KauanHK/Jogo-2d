@@ -8,7 +8,6 @@ class Titulo:
                  text: str,
                  color: tuple[int,int,int] | None = (255,255,255),
                  font_size: int | None = 80):
-        self.titulo = None
         self.screen_size = screen_size
         self.coord = (x,y)
         self.text = text
@@ -19,18 +18,18 @@ class Titulo:
         self.velocidade_atual = (0,3,0)
 
     def update(self):
-        self.titulo = self.font.render(self.text, True, self.color)
+        self.surface = self.font.render(self.text, True, self.color)
         center = (round(self.screen_size[0] / 2), round(self.screen_size[1] / 2))
         x,y = self.coord
         if x == 'center':
-            x = self.titulo.get_rect(center = center).left
+            x = self.surface.get_rect(center = center).left
         if y == 'center':
-            y = self.titulo.get_rect(center = center).top
+            y = self.surface.get_rect(center = center).top
         self.coord = (x,y)
 
     def exibir(self, screen: pygame.Surface):
         self.update()
-        screen.blit(self.titulo, self.coord)
+        screen.blit(self.surface, self.coord)
 
     def atualizarCor(self):
 

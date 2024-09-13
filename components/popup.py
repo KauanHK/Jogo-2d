@@ -8,9 +8,9 @@ class PopUp:
         self.screen_size = screen_size
         self.size = size
         self.color = color
-        self.atualizar_interface()
+        self.atualizar()
 
-    def atualizar_interface(self):
+    def atualizar(self):
         self.interface = pygame.Surface(self.size, pygame.SRCALPHA)
         self.interface.fill(self.color)
         self.coord = self.interface.get_rect(center=self.calcular_centro((0,0), self.screen_size)).topleft
@@ -28,3 +28,4 @@ class PopUp:
 
     def get_size(self):
         return self.size
+    

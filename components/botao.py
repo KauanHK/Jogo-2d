@@ -25,14 +25,15 @@ class Botao:
         self.size = size
         self.text = text
         self.font_size = font_size
-        self.back_color = back_color
+        self.cor_padrao = back_color
         self.txt_color = txt_color
         self.hover_color = hover_color
 
-        self.color = self.back_color
+        self.color = self.cor_padrao
         self.atualizarBotao()
         
     def atualizarBotao(self):
+        
         self.surface = pygame.Surface(self.size)
         self.surface.fill(self.color)
 
@@ -64,14 +65,21 @@ class Botao:
                 return True
         return False
 
-    def hover(self):
-        if self.rect.collidepoint(pygame.mouse.get_pos()):
+    def definir_cor_padrao(self):
+        if self.color != self.cor_padrao:
+            self.color = self.cor_padrao
+            self.atualizarBotao()
+
+    def definir_cor_hover(self):
+        if self.color != self.hover_color:
             self.color = self.hover_color
             self.atualizarBotao()
-            return True
-        self.color = self.back_color
-        self.atualizarBotao()
-        return False
+
+    def hover(self):
+        return self.rect.collidepoint(pygame.mouse.get_pos())
 
     def get_event(self):
         return self.event
+    
+    def get_rect(self, **kwargs):
+        return self.surface.get_rect(**kwargs)

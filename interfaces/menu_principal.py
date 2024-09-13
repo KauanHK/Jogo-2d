@@ -15,10 +15,13 @@ class MenuPrincipal:
         self.interface.titulo.exibir(self.screen)
 
         for botao in self.interface.botoes:
+            if botao.hover():
+                botao.definir_cor_hover()
+            else:
+                botao.definir_cor_padrao()
             botao.exibir(self.screen)
 
     def loadEvent(self, event) -> Literal["Jogo", "MenuNaves", "sair"] | None:
         for botao in self.interface.botoes:
-            botao.hover()    
             if botao.clicked(event):
                 return botao.get_event()
