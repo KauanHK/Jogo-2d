@@ -1,18 +1,47 @@
 import pygame
+from components.nave import Nave
 from components.parede import Parede
 from components.popup import PopUp
 from components.titulo import Titulo
 from components.botao import Botao
+from utils.imagens import carregar_imagem
 from utils.cores import *
 
 
 class Interface:
 
     def __init__(self, screen_size: tuple[int]):
+        self.img_parede = self.carregar_img_parede(screen_size)
+        self.nave = Nave(screen_size, 'center', 'center')
+        self.paredes = Paredes(screen_size, self.img_parede)
+
         self.pause = GameOver.criar_popup(Pause, screen_size)
         self.game_over = GameOver(screen_size)
 
+    def carregar_img_parede(self, screen_size: tuple[int]):
+        largura_parede = screen_size() / 10
+        largura_parede = 80 if largura_parede > 80 else largura_parede
+        return carregar_imagem('imagens', 'obstaculo.jpg', size=(largura_parede,'auto'))
 
+    def exibir(self, screen: pygame.Surface, pausado: bool, colidiu: bool):
+        if pausado:
+            self.pause.exibir(screen)
+
+        elif colidiu:
+            self.game_over.exibir(screen)
+            mouse_pos = pygame.mouse.get_pos()
+            for rect, botao in zip(self.game_over.botoes_rects, self.game_over.botoes):
+                if rect.collidepoint(mouse_pos):
+                    botao.definir_cor_hover()
+                else:
+                    botao.definir_cor_padrao()
+
+            self.interface.game_over.atualizar_popup()
+            self.interface.game_over.exibir(self.screen)
+            if not self.salvo:
+                self.salvar_pontuacao()
+
+            self.exibir_txt_pontuacoes()
     
 class Paredes:
 

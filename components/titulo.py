@@ -31,7 +31,7 @@ class Titulo:
         self.update()
         screen.blit(self.surface, self.coord)
 
-    def atualizarCor(self):
+    def atualizar_cor(self):
 
         velocidades = {
             (255,0,0): (0,3,0),

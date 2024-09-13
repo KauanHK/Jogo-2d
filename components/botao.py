@@ -5,14 +5,14 @@ class Botao:
 
     def __init__(self,
                  screen_size: tuple[int],
-                 event: Literal["Jogo", "MenuPrincipal", "MenuNaves"] | None,
+                 event: Literal["Jogo", "MenuPrincipal", "MenuNaves", "sair"],
                  coord: tuple[int, int],
                  size: tuple[int, int],
                  text: str,
                  font_size: int,
-                 back_color: tuple[int,int,int] | None = (255,255,255),
+                 cor_padrao: tuple[int,int,int] | None = (255,255,255),
                  txt_color: tuple[int,int,int] | None = (0,0,0),
-                 hover_color: tuple[int,int,int] | None = (180,180,180)):
+                 cor_hover: tuple[int,int,int] | None = (180,180,180)):
         
         self.screen_size = screen_size
         self.event = event
@@ -25,17 +25,34 @@ class Botao:
         self.size = size
         self.text = text
         self.font_size = font_size
-        self.cor_padrao = back_color
+        self.cor_padrao = cor_padrao
         self.txt_color = txt_color
-        self.hover_color = hover_color
+        self.cor_hover = cor_hover
+        self.cor = self.cor_padrao
+        self._update()
+        self.rect = self.get_rect()
+        
+    def update(self):
+        '''Atualiza o botão. Caso algo do botão tenha sido modificado (size, text, font_size, etc), 
+        a mudança só será aplicada após dar um 'update'. 
+        Este método verifica também a posição do mouse. Caso passe por cima do botão, ele atualizará a cor.
+        '''
 
-        self.color = self.cor_padrao
-        self.atualizarBotao()
+        # Verificar se o mouse está em cima do botão
+        if self.hover():
+            if self.cor != self.cor_hover:
+                self.cor = self.cor_hover
+        else:
+            if self.cor != self.cor_padrao:
+                self.cor = self.cor_padrao
         
-    def atualizarBotao(self):
-        
+        self._update()
+
+    def _update(self):
+
+        # Criar o Surface
         self.surface = pygame.Surface(self.size)
-        self.surface.fill(self.color)
+        self.surface.fill(self.cor)
 
         txt = pygame.font.Font(None, self.font_size)
         txt = txt.render(self.text, True, self.txt_color)
@@ -56,7 +73,10 @@ class Botao:
         self.coord = (x,y)
         self.rect = self.surface.get_rect(topleft=self.coord)
 
+
     def exibir(self, screen: pygame.Surface):
+        if self.hover():
+            self._update()
         screen.blit(self.surface, self.coord)
 
     def clicked(self, event: pygame.event.Event):
@@ -64,16 +84,6 @@ class Botao:
             if self.hover():
                 return True
         return False
-
-    def definir_cor_padrao(self):
-        if self.color != self.cor_padrao:
-            self.color = self.cor_padrao
-            self.atualizarBotao()
-
-    def definir_cor_hover(self):
-        if self.color != self.hover_color:
-            self.color = self.hover_color
-            self.atualizarBotao()
 
     def hover(self):
         return self.rect.collidepoint(pygame.mouse.get_pos())
@@ -83,3 +93,6 @@ class Botao:
     
     def get_rect(self, **kwargs):
         return self.surface.get_rect(**kwargs)
+    
+    def definir_posicao_absoluta(self, **kwargs) -> pygame.Rect:
+        self.pos_absoluta = self.get_rect(**kwargs).topleft

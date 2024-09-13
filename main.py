@@ -64,11 +64,11 @@ class Manager:
         if event.type == pygame.QUIT:
             self.interface = 'sair'
         else:
-            interface = self.interface.loadEvent(event)
+            interface = self.interface.load_event(event)
             if interface is not None:
                 self.interface = self.nova_interface(interface)
 
-    def nova_interface(self, interface: Literal["Jogo", "MenuPrincipal", "MenuNaves", "Sair"]):
+    def nova_interface(self, interface: Literal["Jogo", "MenuPrincipal", "MenuNaves", "sair"]):
         return self.INTERFACES[interface](self.screen)
 
 if __name__ == '__main__':

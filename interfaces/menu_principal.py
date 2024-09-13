@@ -6,22 +6,14 @@ class MenuPrincipal:
 
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
-        self.interface = Interface(self.screen)
+        self.interface = Interface(self.screen.get_size())
 
     def run(self):
-        
-        self.interface.titulo.atualizarCor()
-        self.interface.titulo.update()
-        self.interface.titulo.exibir(self.screen)
+        self.interface.update()
+        self.interface.exibir(self.screen)
 
-        for botao in self.interface.botoes:
-            if botao.hover():
-                botao.definir_cor_hover()
-            else:
-                botao.definir_cor_padrao()
-            botao.exibir(self.screen)
-
-    def loadEvent(self, event) -> Literal["Jogo", "MenuNaves", "sair"] | None:
+    def load_event(self, event) -> Literal["Jogo", "MenuNaves", "Sair"] | None:
         for botao in self.interface.botoes:
             if botao.clicked(event):
+                print(botao.get_event())
                 return botao.get_event()

@@ -9,11 +9,8 @@ class Jogo:
 
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
-        self.img_parede = self.carregar_img_parede()
 
         screen_size = self.screen.get_size()
-        self.nave = Nave(screen_size, 'center', 'center')
-        self.paredes = Paredes(screen_size, self.img_parede)
         self.interface = Interface(screen_size)
         self.nave_mask = self.nave.getMask()
         self.fragmento_mask = self.paredes.get_mask()
@@ -26,10 +23,7 @@ class Jogo:
         self.max_pontuacao = 0
         self.salvo = False
 
-    def carregar_img_parede(self):
-        largura_parede = self.screen.get_width() / 10
-        largura_parede = 80 if largura_parede > 80 else largura_parede
-        return carregar_imagem('imagens', 'obstaculo.jpg', size=(largura_parede,'auto'))
+    
 
 
     def get_mask(self) -> pygame.Mask:
@@ -63,6 +57,8 @@ class Jogo:
 
     def run(self) -> None:
         '''Executa um frame do jogo'''
+        self.interface.update(self.pausado, self.colidiu())
+        self.interface.exibir()
 
         # Exibir o básico na tela
         self.nave.exibir(self.screen)
@@ -70,23 +66,9 @@ class Jogo:
             parede.exibir(self.screen)
         self.exibir_pontuacao()
 
-        if self.pausado:
-            self.interface.pause.exibir(self.screen)
         
-        elif self.colidiu():
-            mouse_pos = pygame.mouse.get_pos()
-            for rect, botao in zip(self.interface.game_over.botoes_rects, self.interface.game_over.botoes):
-                if rect.collidepoint(mouse_pos):
-                    botao.definir_cor_hover()
-                else:
-                    botao.definir_cor_padrao()
-
-            self.interface.game_over.atualizar_popup()
-            self.interface.game_over.exibir(self.screen)
-            if not self.salvo:
-                self.salvar_pontuacao()
-
-            self.exibir_txt_pontuacoes()
+        
+        
             
         else:
             self.nave.atualizarPosicao()
@@ -96,7 +78,7 @@ class Jogo:
 
         
 
-    def loadEvent(self, event: pygame.event.Event):
+    def load_event(self, event: pygame.event.Event):
         if event.type == pygame.KEYDOWN:
             if not self.pausado:
                 if event.key == pygame.K_UP:
