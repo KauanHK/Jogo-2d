@@ -62,18 +62,24 @@ class Nave:
         y_fogo = [self.y + altura_img, self.y + (3/4) * altura_img, self.y + altura_img, self.y + altura_img/10*9,self.y + altura_img]
         return round(y_fogo[self.nave - 1])
 
-    def atualizarPosicao(self) -> None:
+    def update(self) -> None:
         '''Atualiza o y da nave'''
         self.y += self.velocidade
         self.y_fogo += self.velocidade
 
-    def mudarDirecao(self, direcao: int) -> None:
-        '''Atualiza o valor da velocidade como positiva ou negativa para a nave ir para cima/baixo'''
-        if direcao:
-            self.velocidade = abs(self.velocidade) * direcao
-        else:
-            self.velocidade *= -1
-        
+    def load_event(self, event: pygame.event.Event):
+        '''Carrega um evento. Verificar apenas se foi clicada a seta para cima, baixo, w, s ou ou espaço.'''
+        if event.type == pygame.KEYDOWN:
+
+            if event.key in [pygame.K_UP, pygame.K_w]:
+                self.velocidade = abs(self.velocidade) * -1
+
+            elif event.key in [pygame.K_DOWN, pygame.K_s]:
+                self.velocidade = abs(self.velocidade)
+
+            elif event.key == pygame.K_SPACE:
+                self.velocidade = - self.velocidade
+
     def exibir(self, screen: pygame.Surface):
         '''Exibe a nave e o fogo se a nave estiver subindo'''
         screen.blit(self.img_nave, (self.x, self.y))
@@ -85,7 +91,7 @@ class Nave:
             x = self.x + (self.img_nave.get_width() - self.img_fogo.get_width()) / 2
             screen.blit(self.img_fogo,(x,self.y_fogo))
 
-    def getMask(self):
+    def get_mask(self):
         '''Retorna o Mask da imagem da nave'''
         return pygame.mask.from_surface(self.img_nave)
     

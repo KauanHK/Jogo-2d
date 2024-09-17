@@ -1,86 +1,71 @@
 import pygame
-from components.nave import Nave
-from components.parede import Parede
 from components.popup import PopUp
 from components.titulo import Titulo
 from components.botao import Botao
 from utils.imagens import carregar_imagem
+from pontuacao import Pontuacao
 from utils.cores import *
-
+from components.nave import Nave
+from components.parede import Paredes
 
 class Interface:
 
     def __init__(self, screen_size: tuple[int]):
-        self.img_parede = self.carregar_img_parede(screen_size)
-        self.nave = Nave(screen_size, 'center', 'center')
-        self.paredes = Paredes(screen_size, self.img_parede)
-
         self.pause = GameOver.criar_popup(Pause, screen_size)
         self.game_over = GameOver(screen_size)
 
-    def carregar_img_parede(self, screen_size: tuple[int]):
-        largura_parede = screen_size() / 10
-        largura_parede = 80 if largura_parede > 80 else largura_parede
-        return carregar_imagem('imagens', 'obstaculo.jpg', size=(largura_parede,'auto'))
+        self.pontuacao = Pontuacao()
+        self.salvo = False
+        self._colidiu = False
 
-    def exibir(self, screen: pygame.Surface, pausado: bool, colidiu: bool):
+
+    def update_botoes_game_over(self):
+        for botao in self.game_over.botoes:
+            botao.update()
+
+        # mouse_pos = pygame.mouse.get_pos()
+        # for rect, botao in zip(self.game_over.botoes_rects, self.game_over.botoes):
+        #     if rect.collidepoint(mouse_pos):
+        #         botao.definir_cor_hover()
+        #     else:
+        #         botao.definir_cor_padrao()
+
+    def update(self, nave: Nave, nave_mask: pygame.mask.Mask, paredes: Paredes, fragmento_mask: pygame.mask.Mask, pausado: bool):
+        self._colidiu = self.colidiu(nave, nave_mask, paredes, fragmento_mask)
+        if pausado:
+            return
+        if self._colidiu:
+            self.update_botoes_game_over()
+            self.game_over.atualizar_popup()
+            if not self.salvo:
+                self.pontuacao.salvar_pontuacao(self.pontuacao)
+                self.salvo = True
+        else:
+            nave.update()
+            paredes.update()
+
+    def exibir(self, screen: pygame.Surface, nave: Nave, paredes: Paredes, pausado: bool):
+        nave.exibir(screen)
+        paredes.exibir(screen)
+        self.pontuacao.exibir(screen)
+
         if pausado:
             self.pause.exibir(screen)
 
-        elif colidiu:
+        elif self._colidiu:
             self.game_over.exibir(screen)
-            mouse_pos = pygame.mouse.get_pos()
-            for rect, botao in zip(self.game_over.botoes_rects, self.game_over.botoes):
-                if rect.collidepoint(mouse_pos):
-                    botao.definir_cor_hover()
-                else:
-                    botao.definir_cor_padrao()
+            self.pontuacao.exibir(self.game_over)
 
-            self.interface.game_over.atualizar_popup()
-            self.interface.game_over.exibir(self.screen)
-            if not self.salvo:
-                self.salvar_pontuacao()
-
-            self.exibir_txt_pontuacoes()
+    def colidiu(self, nave: Nave, nave_mask: pygame.mask.Mask, paredes: Paredes, fragmento_mask: pygame.mask.Mask) -> bool:
+        nave_x, nave_y = nave.x, nave.y
+        for parede in paredes:
+            x_fragmento = parede.x
+            for y_fragmento in parede.tops:
+                fragmento_offset = (x_fragmento - nave_x, y_fragmento - nave_y)
+                if nave_mask.overlap(fragmento_mask, fragmento_offset):
+                    return True
+        return False
     
-class Paredes:
-
-    def __init__(self, screen_size: tuple[int], img: pygame.Surface):
-        self.screen_size = screen_size
-        self.paredes = self.criar_paredes(img)
-        self.index = 0
-
-    def definir_coord_paredes(self) -> list[int]:
-        x = round(self.screen_size[0] * 0.95)
-        x_aumento = round(self.screen_size[0] / 4)
-        return [x + i*x_aumento for i in range(4)]
-    
-    def criar_paredes(self, img: pygame.Surface) -> list[Parede]:
-        lefts = self.definir_coord_paredes()
-        paredes = [Parede(self.screen_size, img, x) for x in lefts]
-        return paredes
-    
-    def get_mask(self):
-        return self.paredes[0].getMask()
-    
-    def exibir(self, screen: pygame.Surface):
-        for parede in self.paredes:
-            parede.exibir(screen)
-    
-    def __iter__(self):
-        self.index = 0
-        return self
-    
-    def __next__(self):
-        if self.index >= len(self.paredes):
-            raise StopIteration
-        parede = self.paredes[self.index]
-        self.index += 1
-        return parede
-    
-    def __getitem__(self, index: int):
-        return self.paredes[index]
-
 class Pause:
 
     def __init__(self):
@@ -90,34 +75,34 @@ class GameOver:
 
     def __init__(self, screen_size: tuple[int]):
         self.popup = self.criar_popup(screen_size)
-        self.titulo = self.criar_titulo()
-        self.botoes = self.criar_botoes()
-        self.botoes_rects = self.definir_rects_botoes()
-        self.atualizar_popup()
+        self.titulo = self.criar_titulo(screen_size)
+        self.botoes = self.criar_botoes(screen_size)
+        # self.botoes_rects = self.definir_rects_botoes()
 
     def criar_popup(self, screen_size: tuple[int]) -> PopUp:
+        '''Retorna um Popup'''
         largura = screen_size[0] * 0.4
         altura = screen_size[1] * 0.7
         size = (largura, altura)
         popup = PopUp(screen_size, size, CINZA_TRANSPARENTE)
         return popup
     
-    def criar_titulo(self) -> Titulo:
-        return Titulo(self.popup.get_size(), 'center', 50, 'Game Over', VERMELHO, 100)
+    def criar_titulo(self, screen_size: tuple[int,int]) -> Titulo:
+        '''Retorna um Titulo com "Game Over" em vermelho'''
+        return Titulo(screen_size, 'center', 50, 'Game Over', VERMELHO, 100)
 
-    def criar_botoes(self) -> list[Botao]:
-        y = self.popup.get_size()[1] * 0.6
+    def criar_botoes(self, screen_size: tuple[int,int]) -> list[Botao]:
+        '''Retorna uma lista de Botao com os botões "Restart" e "Menu"'''
+        y = screen_size[1] * 0.6
         coord = ('center', y)
-        largura = self.popup.get_size()[0] / 2
-        altura = 60
+        largura = self.popup.get_width() * 0.7
+        altura = self.popup.get_height() * 0.15
         size = (largura, altura)
-        botao_restart = Botao(self.popup.get_size(), "Jogo", coord, size, 'Restart', 40)
+        botao_restart = Botao(screen_size, "Jogo", coord, size, 'Restart', 40)
 
-        y += botao_restart.size[1] + 20
+        y += altura + 20
         coord = ('center', y)
-        largura = self.popup.get_size()[1]/2
-        size = (largura, altura)
-        botao_sair = Botao(self.popup.get_size(), "MenuPrincipal", coord, size, 'Menu', 40)
+        botao_sair = Botao(screen_size, "MenuPrincipal", coord, size, 'Menu', 40)
         return botao_restart, botao_sair
     
     def definir_rects_botoes(self):
@@ -129,11 +114,16 @@ class GameOver:
             rects.append(rect)
         return rects
 
-    def atualizar_popup(self):
-        self.popup.atualizar()
-        self.popup.blit(self.titulo.surface, self.titulo.coord)
+    def exibir_botoes(self, screen: pygame.Surface):
+        # self.popup.atualizar()
+        # self.popup.blit(self.titulo.surface, self.titulo.coord)
         for botao in self.botoes:
-            self.popup.blit(botao.surface, botao.coord)
+            botao.exibir(screen)
 
     def exibir(self, screen: pygame.Surface):
         self.popup.exibir(screen)
+
+    def blit(self, surface: pygame.Surface, dest: tuple[int,int]):
+        self.popup.blit(surface, dest)
+
+

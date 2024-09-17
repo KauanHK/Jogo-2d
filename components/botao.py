@@ -34,7 +34,7 @@ class Botao:
         
     def update(self):
         '''Atualiza o botão. Caso algo do botão tenha sido modificado (size, text, font_size, etc), 
-        a mudança só será aplicada após dar um 'update'. 
+        a mudança só será aplicada após executar este método. 
         Este método verifica também a posição do mouse. Caso passe por cima do botão, ele atualizará a cor.
         '''
 
