@@ -1,49 +1,41 @@
-# import pygame
+import pygame
+from interfaces.jogo import JogoManager
 
-# def run(test, load_event = None):
-#     rodando = True
-#     while rodando:
-#         for event in pygame.event.get():
-#             if event.type == pygame.QUIT:
-#                 rodando = False
-#             elif load_event is not None:
-#                 load_event(event)
+def run(test, load_event = None):
+
+    clock = pygame.time.Clock()
+    rodando = True
+    while rodando:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                rodando = False
+            elif load_event is not None:
+                load_event(event)
         
-#         test()
+        test()
 
-#         pygame.display.flip()
+        clock.tick(60)
+        pygame.display.flip()
 
-#     pygame.quit()
-
-
-# def load_event(event: pygame.event.Event):
-#     pass
-
-# def test(screen, surface):
-#     screen.fill((255,255,255))
-#     coord = surface.get_rect(center = screen.get_rect().center).topleft
-#     screen.blit(surface, coord)
-
-# def main():
-#     pygame.init()
-#     screen = pygame.display.set_mode((800,600))
-#     surface = pygame.Surface((400,400), pygame.SRCALPHA)
-#     surface.fill((200,200,200,100))
-#     run(
-#         test = lambda: test(screen, surface)
-#     )
-
-# if __name__ == '__main__':
-#     main()
+    pygame.quit()
 
 
-def func1():
-    print('func1')
-    return True
+def load_event(event: pygame.event.Event, manager: JogoManager):
+    manager.load_event(event)
 
-def func2():
-    print('func2')
-    return True
+def test(screen, manager: JogoManager):
+    screen.fill((0,0,0))
+    manager.update()
+    manager.exibir(screen)
 
-if not func1() or not func2():
-    pass
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((800,600))
+    manager = JogoManager(screen.get_size())
+    run(
+        test = lambda: test(screen, manager),
+        load_event = lambda event: load_event(event, manager)
+    )
+
+if __name__ == '__main__':
+    main()

@@ -1,10 +1,11 @@
 import pygame
+from typing import Literal
 
 class Titulo:
     def __init__(self,
                  screen_size: tuple[int],
-                 x: int | str,
-                 y: int | str,
+                 x: int | Literal["center"],
+                 y: int | Literal["center"],
                  text: str,
                  color: tuple[int,int,int] | None = (255,255,255),
                  font_size: int | None = 80):

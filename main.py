@@ -1,6 +1,6 @@
 import pygame
 from utils.imagens import carregar_imagem
-from interfaces.jogo import Jogo
+from interfaces.jogo import JogoManager
 from interfaces.menu_principal import MenuPrincipal
 from interfaces.menu_naves import MenuNaves
 from typing import Union, Literal
@@ -8,13 +8,13 @@ from typing import Union, Literal
 class Manager:
 
     INTERFACES = {
-        "Jogo": Jogo,
+        "Jogo": JogoManager,
         "MenuPrincipal": MenuPrincipal,
         "MenuNaves": MenuNaves,
-        "sair": "sair"
+        "sair": lambda: None
     }
 
-    def __init__(self, interface: Union[Jogo, MenuPrincipal, MenuNaves] = MenuPrincipal):
+    def __init__(self, interface: Union[JogoManager, MenuPrincipal, MenuNaves] = MenuPrincipal):
         '''
         Parâmetro
         ---------
