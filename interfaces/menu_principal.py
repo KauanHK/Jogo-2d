@@ -15,5 +15,4 @@ class MenuPrincipal:
     def load_event(self, event) -> Literal["Jogo", "MenuNaves", "Sair"] | None:
         for botao in self.interface.botoes:
             if botao.clicked(event):
-                print(botao.get_event())
                 return botao.get_event()

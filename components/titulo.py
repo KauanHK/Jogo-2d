@@ -28,7 +28,6 @@ class Titulo:
         self.coord = (x,y)
 
     def exibir(self, screen: pygame.Surface):
-        self.update()
         screen.blit(self.surface, self.coord)
 
     def atualizar_cor(self):

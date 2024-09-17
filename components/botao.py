@@ -30,7 +30,8 @@ class Botao:
         self.cor_hover = cor_hover
         self.cor = self.cor_padrao
         self._update()
-        self.rect = self.get_rect()
+        self.rect = self.get_rect(topleft = self.coord)
+        self.i = 0
         
     def update(self):
         '''Atualiza o botão. Caso algo do botão tenha sido modificado (size, text, font_size, etc), 
@@ -80,8 +81,11 @@ class Botao:
         screen.blit(self.surface, self.coord)
 
     def clicked(self, event: pygame.event.Event):
+        print(self.i, end='              \r')
+        self.i += 1
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.hover():
+                print(self.get_event())
                 return True
         return False
 
