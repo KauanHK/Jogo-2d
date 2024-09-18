@@ -13,6 +13,7 @@ class Nave:
                  screen_size: tuple[int],
                  x: int | Literal['center'],
                  y: int | Literal['center'],
+                 nave: int | None = None
                  ):
         '''Cria uma instância de Nave.
         
@@ -25,14 +26,14 @@ class Nave:
         self.screen_size = screen_size
         self.x = x
         self.y = y
-        self.nave = Nave.selecionada
+        self.nave = nave if nave is not None else Nave.selecionada
         self.img_nave, self.img_fogo = self.carregar_imgs()
         if self.x == 'center':
             self.x = self.calcular_centro(0)
         if self.y == 'center':
             self.y = self.calcular_centro(1)
         self.y_fogo = self.definir_y_fogo()
-        self.velocidade = 3
+        self.velocidade = -3
 
     def carregar_imgs(self) -> tuple[pygame.Surface]:
         '''Retorna, respectivamente, as imagens da nave e do fogo'''

@@ -1,20 +1,19 @@
 import pygame
 from utils.imagens import carregar_imagem
-from interfaces.jogo import JogoManager
-from interfaces.menu_principal import MenuPrincipal
-from interfaces.menu_naves import MenuNaves
+from interfaces.jogo_manager import JogoManager
+from interfaces.menu_principal_manager import MenuPrincipalManager
+from interfaces.menu_naves_manager import MenuNavesManager
 from typing import Union, Literal
 
 class Manager:
 
     INTERFACES = {
         "Jogo": JogoManager,
-        "MenuPrincipal": MenuPrincipal,
-        "MenuNaves": MenuNaves,
-        "sair": lambda: None
+        "MenuPrincipal": MenuPrincipalManager,
+        "MenuNaves": MenuNavesManager,
     }
 
-    def __init__(self, interface: Union[JogoManager, MenuPrincipal, MenuNaves] = MenuPrincipal):
+    def __init__(self, interface: Union[JogoManager, MenuPrincipalManager, MenuNavesManager] = MenuPrincipalManager):
         '''
         Parâmetro
         ---------
@@ -32,7 +31,7 @@ class Manager:
         self.screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
         # self.screen = pygame.display.set_mode((500,400))
 
-        self.interface = self.interface(self.screen)
+        self.interface = self.interface(self.screen.get_size())
         self.FUNDO = carregar_imagem('imagens', 'fundo.jpg', size=self.screen.get_size())
         self.clock = pygame.time.Clock()
         self.fps = 60
@@ -41,18 +40,19 @@ class Manager:
         '''Executa o jogo'''
         
         self._setup()
-        while self.interface != "sair":
+        self.rodando = True
+        while self.rodando:
             for event in pygame.event.get():
                 self.loadEvent(event)
 
             self.screen.blit(self.FUNDO, (0,0))
-            self.interface.run()
+            self.interface.run(self.screen)
             
             pygame.display.flip()
             self.clock.tick(self.fps)
         
         print('\nObrigado por jogar meu jogo :)')
-        print('Desenvolvido por Kauan Henrique Kaestner')
+        print('https://github.com/KauanHK/Jogo-2d.git')
         pygame.quit()
     
 
@@ -61,15 +61,16 @@ class Manager:
         Pode atualizar o valor de self.rodando para finalizar o jogo, 
         alternar o valor de self.interface, 
         ou não fazer nada, dependendo do evento.'''
-        if event.type == pygame.QUIT:
-            self.interface = 'sair'
-        else:
-            interface = self.interface.load_event(event)
-            if interface is not None:
-                self.interface = self.nova_interface(interface)
+        interface = self.interface.load_event(event)
+        if event.type == pygame.QUIT or interface == 'sair':
+            self.rodando = False
+        elif interface is not None:
+            self.interface = self.nova_interface(interface)
 
     def nova_interface(self, interface: Literal["Jogo", "MenuPrincipal", "MenuNaves", "sair"]):
-        return self.INTERFACES[interface](self.screen)
+        if interface == "sair":
+            self.rodando = False
+        return self.INTERFACES[interface](self.screen.get_size())
 
 if __name__ == '__main__':
     manager = Manager()

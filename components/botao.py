@@ -30,7 +30,6 @@ class Botao:
         self.cor_hover = cor_hover
         self.cor = self.cor_padrao
         self._update()
-        self.rect = self.get_rect(topleft = self.coord)
         
     def update(self):
         '''Atualiza o botão. Caso algo do botão tenha sido modificado (size, text, font_size, etc), 
@@ -86,7 +85,7 @@ class Botao:
         return False
 
     def hover(self) -> bool:
-        return self.rect.collidepoint(pygame.mouse.get_pos())
+        return self.get_rect(topleft = self.coord).collidepoint(pygame.mouse.get_pos())
 
     def get_event(self):
         return self.event
@@ -94,5 +93,3 @@ class Botao:
     def get_rect(self, **kwargs):
         return self.surface.get_rect(**kwargs)
     
-    def definir_posicao_absoluta(self, **kwargs) -> pygame.Rect:
-        self.pos_absoluta = self.get_rect(**kwargs).topleft

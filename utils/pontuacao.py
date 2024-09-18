@@ -10,13 +10,16 @@ from typing import Literal
 
 class Pontuacao:
 
-    def __init__(self, screen_size: tuple[int,int], pontuacao: int, filename: str = 'pontuacoes.csv'):
+    def __init__(self, pontuacao: int = 0, filename: str = 'pontuacoes.csv'):
         self.pontuacao = pontuacao
         self.filename = filename
         self.criar_tabela()
 
 
     def criar_tabela(self):
+        if os.path.exists(self.filename):
+            return
+        
         with open(self.filename, 'w', newline='') as arq:
             writer = csv.writer(arq)
             writer.writerow(['data', 'pontuacao'])
@@ -63,9 +66,9 @@ class Pontuacao:
             reader = csv.DictReader(arq)
             return [int(linha['pontuacao']) for linha in reader]
 
-    def salvar_pontuacao(self, pontuacao: int) -> None:
+    def salvar_pontuacao(self) -> None:
         if not os.path.exists(self.filename):
             self.criar_tabela()
         with open(self.filename, 'a', newline='') as arq:
             writer = csv.writer(arq)
-            writer.writerow([date.today(), pontuacao])
+            writer.writerow([date.today(), self.pontuacao])

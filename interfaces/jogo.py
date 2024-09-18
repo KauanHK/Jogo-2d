@@ -1,112 +1,102 @@
 import pygame
 from components.nave import Nave
 from components.parede import Paredes
+from components.popup import PopUp
 from components.titulo import Titulo
-from .ui_jogo import Jogo, PopUpGameOver
-from pontuacao import Pontuacao
+from components.botao import Botao
 from utils.cores import *
 
 
-class JogoManager:
+class Jogo:
+
+    def __init__(self, screen_size: tuple[int,int], nave: Nave, paredes: Paredes):
+        self.screen_size = screen_size
+        self.nave = nave
+        self.paredes = paredes
+
+
+
+class PopUpGameOver:
 
     def __init__(self, screen_size: tuple[int,int]):
+        """PopUp do game over."""
+        self.screen_size = screen_size
 
-        """Gerenciador do jogo. Executa todas as funcionalidades da nave e das paredes 
-        e exibe o popup gameover e de pause. Recebe as dimensões da tela como parâmetro."""
+        self.popup = self.criar_popup(screen_size)
+        self.titulo = self.criar_titulo(screen_size)
+        self.botoes = self.criar_botoes(screen_size)
+        self.popup.update()
 
-        self.screen_size = screen_size.get_size()
-
-        self.nave = Nave(self.screen_size, 'center', 'center')
-        self.paredes = Paredes(self.screen_size)
-
-        self.jogo = Jogo(self.screen_size, self.nave, self.paredes)
-        self.game_over = PopUpGameOver(self.screen_size)
-        # self.pause = Pause(self.screen_size)
-
-        self.nave_mask = self.nave.get_mask()
-        self.fragmento_mask = self.paredes.get_mask()
-
-        self.pontuacao = Pontuacao(self.screen_size, 0)
-        self.titulo_pontuacao = self.criar_titulo_pontuacao()
-        self.titulo_recorde = None  # Será criado em 'self.colidiu()' após a colisão
-
-        self._colidiu = False
-
-    def criar_titulo_pontuacao(self):
-        return Titulo(self.screen_size, 'center', self.screen_size[1] * 0.1, str(self.pontuacao.pontuacao))
-
-    def criar_titulo_recorde(self):
-        return Titulo(self.screen_size, 'center', self.screen_size[1] * 0.4, str(self.pontuacao.get_max_pontuacao()), AQUA)
+    def criar_popup(self, screen_size: tuple[int,int]):
+        size = (screen_size[0] * 0.5, screen_size[1] * 0.75)
+        return PopUp(screen_size, size, CINZA_TRANSPARENTE)
+    
+    def criar_titulo(self, screen_size: tuple[int,int]):
+        y = self.popup.coord[1] + 100
+        return Titulo(screen_size, 'center', y, 'Game Over', VERMELHO)
+    
+    def criar_botoes(self, screen_size: tuple[int,int]):
+        y = self.popup.coord[1] + self.popup.size[1] * 0.6
+        size = (self.popup.size[0] * 0.6, self.popup.size[1] * 0.12)
+        botoes = [
+            Botao(screen_size, "Jogo", ('center', y), size, 'Restart', 32),
+            Botao(screen_size, "MenuPrincipal", ('center', y+size[1]+20), size, 'Menu', 32),
+        ]
+        return botoes
 
     def update(self):
-        """Atualiza um frame do jogo"""
-
-        if self.pontuou():
-            self.pontuacao.add()
-            self.titulo_pontuacao.text = str(self.pontuacao.pontuacao)
-            self.titulo_pontuacao.update()
-
-        # Verificar se há algum popup ativo
-        if self._colidiu or self.colidiu():
-            self._colidiu = True
-            self.game_over.update()
-
-        # elif self.pausado:
-        #     self.pause.update()
-
-        else:
-            self.nave.update()
-            self.paredes.update()
+        for botao in self.botoes:
+            botao.update()
 
     def exibir(self, screen: pygame.Surface):
-        """Exibe um frame do jogo. 
-        Se estiver pausado, exibe o popup de pause, 
-        e se estiver game over, exibe o popup de gameover"""
+        self.popup.exibir(screen)
+        self.titulo.exibir(screen)
+        for botao in self.botoes:
+            botao.exibir(screen)
 
-        # Exibir a nave e as paredes
-        self.nave.exibir(screen)
-        self.paredes.exibir(screen)
-        self.titulo_pontuacao.exibir(screen)
-
-        # # Verificar se há algum popup ativo
-        # if self.popup is not None:
-        #     self.popup.exibir(screen)
+    def load_event(self, event: pygame.event.Event):
+        for botao in self.botoes:
+            if botao.clicked(event):
+                return botao.get_event()
             
-        # Verificar se houver alguma colisão
-        if self._colidiu or self.colidiu():
-            self._colidiu = True
-            self.game_over.exibir(screen)
-            self.titulo_recorde.exibir(screen)
+class Pause:
 
-    def load_event(self, event:pygame.event.Event):
-        """Carrega um evento."""
-        if self._colidiu:
-            self.game_over.load_event(event)
-        self.nave.load_event(event)
+    def __init__(self, screen_size: tuple[int,int]):
+        self.screen_size = screen_size
+        self.popup = self.criar_popup(self.screen_size)
+        self.titulo = self.criar_titulo(self.screen_size)
+        self.botoes = self.criar_botoes(self.screen_size)
 
-    def verificar_colisao(self):
-        '''Verificar se houve uma colisão NO FRAME ATUAL. 
-        Caso a nave estiver encostada na parede há mais de um frame, retorna False.'''
-        if not self._colidiu and self.colidiu():
-            self._colidiu = True
-            return True
-        return False
-
-    def colidiu(self) -> bool:
-        """Retorna True se a nave estiver em cima de uma parede, se não False"""
-        nave_x, nave_y = self.nave.x, self.nave.y
-        for parede in self.paredes:
-            x_fragmento = parede.x
-            for y_fragmento in parede.tops:
-                fragmento_offset = (x_fragmento - nave_x, y_fragmento - nave_y)
-                if self.nave_mask.overlap(self.fragmento_mask, fragmento_offset):
-                    self.titulo_recorde = self.criar_titulo_recorde()
-                    return True
-        return False
+    def criar_popup(self, screen_size: tuple[int,int]) -> PopUp:
+        size = (screen_size[0] * 0.4, screen_size[1] * 0.5)
+        return PopUp(screen_size, size, CINZA_TRANSPARENTE)
     
-    def pontuou(self):
-        for parede in self.paredes:
-            if not parede.pontuou and self.nave.x > parede.x:
-                parede.pontuou = True
-                return True
-        return False
+    def criar_titulo(self, screen_size: tuple[int,int]):
+        y = self.popup.coord[1] + 70
+        return Titulo(screen_size, 'center', y, 'Pause')
+
+    def criar_botoes(self, screen_size: tuple[int,int]):
+        size = (screen_size[0] * 0.25, screen_size[1] * 0.1)
+        y = self.popup.coord[1] + self.popup.size[1] - size[1] - 20
+        botao_sair = Botao(screen_size, "MenuPrincipal", ('center', y), size, 'Menu', 40)
+
+        y -= botao_sair.size[1] + 20
+        botao_continuar = Botao(screen_size, 'continuar', ('center', y), size, 'Continuar', 40)
+
+        return botao_continuar, botao_sair
+
+    def update(self):
+        for botao in self.botoes:
+            botao.update()
+
+    def exibir(self, screen: pygame.Surface):
+        self.popup.exibir(screen)
+        self.titulo.exibir(screen)
+        for botao in self.botoes:
+            botao.exibir(screen)
+
+    def load_event(self, event: pygame.event.Event):
+        for botao in self.botoes:
+            if botao.clicked(event):
+                print(botao.get_event())
+                return botao.get_event()
